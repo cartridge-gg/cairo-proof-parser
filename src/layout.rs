@@ -1,16 +1,13 @@
-
-
 use std::fmt::Display;
 
 use serde::Deserialize;
 
+// For now only the recursive layout is supported
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Layout {
     Recursive,
 }
-
-
 
 impl Layout {
     pub fn get_consts(&self) -> LayoutConstants {
@@ -104,4 +101,3 @@ impl LayoutConstants {
         }
     }
 }
-

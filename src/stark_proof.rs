@@ -39,7 +39,6 @@ pub struct VectorCommitmentConfig {
 pub struct FriConfig {
     pub log_input_size: u32,
     pub n_layers: u32,
-    // When deserialized this should skip first nesting. Flatten the TblCmmtmntCnfg
     pub inner_layers: Vec<TableCommitmentConfig>,
     pub fri_step_sizes: Vec<u32>,
     pub log_last_layer_degree_bound: u32,
@@ -93,7 +92,7 @@ pub struct TracesDecommitment {
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct TableDecommitment {
     pub n_values: usize,
-    pub values: Vec<BigUint>, // Assuming BigUint for numerical values
+    pub values: Vec<BigUint>,
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
@@ -152,7 +151,6 @@ pub struct CairoPublicInput {
     pub n_continuous_pages: usize,
     pub continuous_page_headers: Vec<BigUint>,
 }
-
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct PubilcMemoryCell {
@@ -377,10 +375,6 @@ impl IntoAst for VectorCommitmentWitnessFlat {
 
 impl IntoAst for FriWitness {
     fn into_ast(self) -> Vec<Expr> {
-        // self.layers
-        //     .into_iter()
-        //     .flat_map(|layer| layer.into_ast())
-        //     .collect()
         self.layers.into_ast()
     }
 }
@@ -388,7 +382,6 @@ impl IntoAst for FriWitness {
 impl IntoAst for FriLayerWitness {
     fn into_ast(self) -> Vec<Expr> {
         let mut exprs = vec![Expr::Value(format!("{}", self.n_leaves))];
-        // exprs.append(self.leaves.into_ast().as_mut());
         exprs.append(
             &mut self
                 .leaves

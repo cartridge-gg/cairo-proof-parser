@@ -49,10 +49,13 @@ impl Builtin {
     pub fn sort_segments(
         memory_segments: HashMap<String, MemorySegmentAddress>,
     ) -> Vec<MemorySegmentAddress> {
-        let mut segments = memory_segments.into_iter().filter_map(|(k, v)| {
-            let builtin = Builtin::from_str(&k)?;
-            Some((builtin, v))
-        }).collect::<Vec<_>>();
+        let mut segments = memory_segments
+            .into_iter()
+            .filter_map(|(k, v)| {
+                let builtin = Builtin::from_str(&k)?;
+                Some((builtin, v))
+            })
+            .collect::<Vec<_>>();
         segments.sort_by_key(|(builtin, _)| Builtin::ordered().iter().position(|b| b == builtin));
         segments.into_iter().map(|(_, segment)| segment).collect()
     }

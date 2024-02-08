@@ -7,14 +7,7 @@ use crate::{
     annotations::{extract::FromStrHex, Annotations},
     builtins::Builtin,
     layout::Layout,
-    stark_proof::{
-        CairoPublicInput, FriConfig, FriLayerWitness, FriUnsentCommitment, FriWitness,
-        ProofOfWorkConfig, ProofOfWorkUnsentCommitment, PubilcMemoryCell, SegmentInfo, StarkConfig,
-        StarkProof, StarkUnsentCommitment, StarkWitness, TableCommitmentConfig,
-        TableCommitmentWitness, TableCommitmentWitnessFlat, TableDecommitment, TracesConfig,
-        TracesDecommitment, TracesUnsentCommitment, TracesWitness, VectorCommitmentConfig,
-        VectorCommitmentWitness, VectorCommitmentWitnessFlat,
-    },
+    stark_proof::*,
     utils::log2_if_power_of_2,
 };
 
@@ -181,7 +174,10 @@ impl ProofJSON {
             .collect::<Vec<_>>();
         let layout = BigUint::from_bytes_be(&public_input.layout.bytes_encode());
         let (padding_addr, padding_value) = match public_input.public_memory.get(0) {
-            Some(m) => (m.address,  BigUint::from_str_hex(&m.value).ok_or(anyhow::anyhow!("Invalid memory value"))?),
+            Some(m) => (
+                m.address,
+                BigUint::from_str_hex(&m.value).ok_or(anyhow::anyhow!("Invalid memory value"))?,
+            ),
             None => anyhow::bail!("Invalid public memory"),
         };
         Ok(CairoPublicInput {
@@ -205,10 +201,13 @@ impl ProofJSON {
         public_memory
             .iter()
             .filter(|m| m.page == 0)
-            .map(|m| Ok(PubilcMemoryCell {
-                address: m.address,
-                value: BigUint::from_str_hex(&m.value).ok_or(anyhow::anyhow!("Invalid memory value"))?,
-            }))
+            .map(|m| {
+                Ok(PubilcMemoryCell {
+                    address: m.address,
+                    value: BigUint::from_str_hex(&m.value)
+                        .ok_or(anyhow::anyhow!("Invalid memory value"))?,
+                })
+            })
             .collect::<anyhow::Result<Vec<_>>>()
     }
     fn continuous_page_headers(
