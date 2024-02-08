@@ -160,8 +160,7 @@ impl ProofJSON {
         alpha: BigUint,
     ) -> anyhow::Result<CairoPublicInput> {
         let continuous_page_headers =
-            Self::continuous_page_headers(&public_input.public_memory, z, alpha)
-                .expect("Failed to get continuous page headers");
+            Self::continuous_page_headers(&public_input.public_memory, z, alpha)?;
         let main_page = Self::main_page(&public_input.public_memory)?;
         let dynamic_params = public_input.dynamic_params.unwrap_or_default();
         let memory_segments = Builtin::sort_segments(public_input.memory_segments)
