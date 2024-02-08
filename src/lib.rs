@@ -1,6 +1,6 @@
 use std::convert::TryFrom;
 
-use crate::{ast::Exprs, json_parser::ProofJSON, stark_proof::StarkProof};
+use crate::{json_parser::ProofJSON, stark_proof::StarkProof};
 
 mod annotations;
 mod ast;
@@ -13,6 +13,8 @@ mod builtins;
 extern crate num_bigint;
 extern crate serde;
 extern crate regex;
+
+pub use ast::{Exprs, Expr};
 
 pub fn parse(input: String) -> anyhow::Result<Exprs> {
     let proof_json = serde_json::from_str::<ProofJSON>(&input)?;
