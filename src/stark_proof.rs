@@ -365,8 +365,7 @@ impl IntoAst for VectorCommitmentWitnessFlat {
             &mut self
                 .authentications
                 .iter()
-                .map(|x| x.into_ast())
-                .flatten()
+                .flat_map(|x| x.into_ast())
                 .collect::<Vec<_>>(),
         );
         exprs
@@ -386,8 +385,7 @@ impl IntoAst for FriLayerWitness {
             &mut self
                 .leaves
                 .iter()
-                .map(|x| x.into_ast())
-                .flatten()
+                .flat_map(|x| x.into_ast())
                 .collect::<Vec<_>>(),
         );
         exprs.append(&mut self.table_witness.into_ast());

@@ -77,14 +77,14 @@ impl ProofJSON {
                 n_columns: consts.num_columns_first,
                 vector: VectorCommitmentConfig {
                     height: log_eval_domain_size,
-                    n_verifier_friendly_commitment_layers: n_verifier_friendly_commitment_layers,
+                    n_verifier_friendly_commitment_layers,
                 },
             },
             interaction: TableCommitmentConfig {
                 n_columns: consts.num_columns_second,
                 vector: VectorCommitmentConfig {
                     height: log_eval_domain_size,
-                    n_verifier_friendly_commitment_layers: n_verifier_friendly_commitment_layers,
+                    n_verifier_friendly_commitment_layers,
                 },
             },
         };
@@ -93,7 +93,7 @@ impl ProofJSON {
             n_columns: consts.constraint_degree,
             vector: VectorCommitmentConfig {
                 height: log_eval_domain_size,
-                n_verifier_friendly_commitment_layers: n_verifier_friendly_commitment_layers,
+                n_verifier_friendly_commitment_layers,
             },
         };
 
@@ -119,8 +119,7 @@ impl ProofJSON {
                     n_columns: 2_u32.pow(*layer_steps),
                     vector: VectorCommitmentConfig {
                         height: *layer_log_rows,
-                        n_verifier_friendly_commitment_layers:
-                            n_verifier_friendly_commitment_layers,
+                        n_verifier_friendly_commitment_layers,
                     },
                 })
                 .collect(),
