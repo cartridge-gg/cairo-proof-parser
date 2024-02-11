@@ -16,8 +16,20 @@ extern crate serde;
 
 pub use ast::{Expr, Exprs};
 
-pub fn parse(input: String) -> anyhow::Result<Exprs> {
+pub struct ParseStarkProof {
+    pub config: Exprs,
+    pub public_input: Exprs,
+    pub unsent_commitment: Exprs,
+    pub witness: Exprs,
+}
+
+pub fn parse(input: String) -> anyhow::Result<ParseStarkProof> {
     let proof_json = serde_json::from_str::<ProofJSON>(&input)?;
     let stark_proof = StarkProof::try_from(proof_json)?;
-    Ok(Exprs::from(stark_proof))
+    Ok(ParseStarkProof {
+        config: Exprs::from(stark_proof.config),
+        public_input: Exprs::from(stark_proof.public_input),
+        unsent_commitment: Exprs::from(stark_proof.unsent_commitment),
+        witness: Exprs::from(stark_proof.witness),
+    })
 }
