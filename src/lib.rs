@@ -1,6 +1,7 @@
 use std::convert::TryFrom;
 
-use crate::{json_parser::ProofJSON, stark_proof::StarkProof};
+use crate::json_parser::ProofJSON;
+pub use crate::stark_proof::StarkProof;
 
 mod annotations;
 mod ast;
