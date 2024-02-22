@@ -36,7 +36,6 @@ pub(crate) struct LayoutConstants {
     pub constraint_degree: u32,
     pub num_columns_first: u32,
     pub num_columns_second: u32,
-    
 }
 
 impl LayoutConstants {

@@ -78,7 +78,7 @@ impl<const RADIX: usize> std::fmt::Debug for Entry<RADIX> {
                 .debug_tuple("Array")
                 .field(
                     &arg0
-                        .into_iter()
+                        .iter()
                         .map(|v| v.to_str_radix(RADIX.try_into().unwrap()))
                         .collect::<Vec<_>>(),
                 )
