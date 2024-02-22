@@ -6,7 +6,6 @@ mod annotations;
 mod ast;
 mod builtins;
 mod json_parser;
-pub mod lambda;
 mod layout;
 mod stark_proof;
 mod utils;
