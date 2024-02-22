@@ -10,13 +10,10 @@ mod layout;
 mod stark_proof;
 mod utils;
 
-extern crate cairo_platinum_prover;
 extern crate clap;
-extern crate lambdaworks_math;
 extern crate num_bigint;
 extern crate regex;
 extern crate serde;
-extern crate stark_platinum_prover;
 
 pub use ast::{Expr, Exprs};
 
