@@ -41,8 +41,8 @@ pub(crate) struct LayoutConstants {
 impl LayoutConstants {
     pub fn recursive() -> Self {
         LayoutConstants {
-            cpu_component_step: 1,
             constraint_degree: 2,
+            cpu_component_step: 1,
             num_columns_first: 7,
             num_columns_second: 3,
         }
@@ -50,10 +50,9 @@ impl LayoutConstants {
     pub fn starknet() -> Self {
         LayoutConstants {
             constraint_degree: 2,
+            cpu_component_step: 1,
             num_columns_first: 9,
             num_columns_second: 1,
-            // Unused
-            cpu_component_step: 0,
         }
     }
 }
