@@ -79,7 +79,9 @@ impl ProofJSON {
             .get_dynamics_or_consts(&self.public_input.dynamic_params)
         {
             Some(c) => c,
-            None => anyhow::bail!("There were some constant overrides in the dynamic params but couldn't be parsed!"),
+            None => anyhow::bail!(
+                "There were some constant overrides in the dynamic params but couldn't be parsed!"
+            ),
         };
 
         let log_eval_domain_size = self.log_eval_damain_size()?;
