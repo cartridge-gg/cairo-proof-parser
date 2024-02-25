@@ -54,7 +54,7 @@ pub struct PublicMemoryElement {
 
 #[derive(Deserialize, Debug, Clone, PartialEq)]
 pub struct PublicInput {
-    dynamic_params: Option<Vec<()>>,
+    dynamic_params: Option<HashMap<String, BigUint>>,
     layout: Layout,
     memory_segments: HashMap<String, MemorySegmentAddress>,
     n_steps: u32,
@@ -184,7 +184,7 @@ impl ProofJSON {
             range_check_min: public_input.rc_min,
             range_check_max: public_input.rc_max,
             layout,
-            dynamic_params,
+            dynamic_params: dynamic_params.into_iter().collect(),
             n_segments: memory_segments.len(),
             segments: memory_segments,
             padding_addr,
