@@ -1,4 +1,7 @@
-use std::{collections::HashMap, convert::TryFrom};
+use std::{
+    collections::{BTreeMap, HashMap},
+    convert::TryFrom,
+};
 
 use num_bigint::BigUint;
 use serde::Deserialize;
@@ -54,7 +57,7 @@ pub struct PublicMemoryElement {
 
 #[derive(Deserialize, Debug, Clone, PartialEq)]
 pub struct PublicInput {
-    dynamic_params: Option<Vec<()>>,
+    dynamic_params: Option<BTreeMap<String, BigUint>>,
     layout: Layout,
     memory_segments: HashMap<String, MemorySegmentAddress>,
     n_steps: u32,
@@ -69,7 +72,17 @@ impl ProofJSON {
         let stark = &self.proof_parameters.stark;
         let n_verifier_friendly_commitment_layers =
             self.proof_parameters.n_verifier_friendly_commitment_layers;
-        let consts = self.public_input.layout.get_consts();
+
+        let consts = match self
+            .public_input
+            .layout
+            .get_dynamics_or_consts(&self.public_input.dynamic_params)
+        {
+            Some(c) => c,
+            None => anyhow::bail!(
+                "There were some constant overrides in the dynamic params but couldn't be parsed!"
+            ),
+        };
 
         let log_eval_domain_size = self.log_eval_damain_size()?;
         let traces = TracesConfig {
@@ -184,7 +197,7 @@ impl ProofJSON {
             range_check_min: public_input.rc_min,
             range_check_max: public_input.rc_max,
             layout,
-            dynamic_params,
+            dynamic_params: dynamic_params.into_iter().collect(),
             n_segments: memory_segments.len(),
             segments: memory_segments,
             padding_addr,
