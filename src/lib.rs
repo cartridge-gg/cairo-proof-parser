@@ -10,6 +10,7 @@ mod layout;
 mod stark_proof;
 mod utils;
 
+extern crate clap;
 extern crate num_bigint;
 extern crate regex;
 extern crate serde;
