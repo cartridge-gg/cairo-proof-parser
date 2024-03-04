@@ -61,7 +61,7 @@ impl Annotation {
             },
             Annotation::OodsValues => PrefixAndKind {
                 prefix: "STARK/Out Of Domain Sampling/OODS values".to_string(),
-                kinds: AnnotationKinds::FieldElement,
+                kinds: AnnotationKinds::FieldElements,
             },
             Annotation::FriLayersCommitments => PrefixAndKind {
                 prefix: "STARK/FRI/Commitment/Layer [0-9]+".to_string(),
