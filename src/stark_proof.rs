@@ -341,7 +341,12 @@ impl IntoAst for VectorCommitmentWitness {
 
 impl IntoAst for FriWitness {
     fn into_ast(self) -> Vec<Expr> {
-        self.layers.into_ast()
+        let exprs = self
+            .layers
+            .into_iter()
+            .flat_map(|x| x.into_ast())
+            .collect::<Vec<_>>();
+        exprs
     }
 }
 
