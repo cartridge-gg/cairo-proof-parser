@@ -11,7 +11,6 @@ pub struct StarkProof {
     pub unsent_commitment: StarkUnsentCommitment,
     pub witness: StarkWitness,
 }
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct StarkConfig {
     pub traces: TracesConfig,
@@ -23,25 +22,21 @@ pub struct StarkConfig {
     pub log_n_cosets: u32,
     pub n_verifier_friendly_commitment_layers: u32,
 }
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct TracesConfig {
     pub original: TableCommitmentConfig,
     pub interaction: TableCommitmentConfig,
 }
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct TableCommitmentConfig {
     pub n_columns: u32,
     pub vector: VectorCommitmentConfig,
 }
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct VectorCommitmentConfig {
     pub height: u32,
     pub n_verifier_friendly_commitment_layers: u32,
 }
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct FriConfig {
     pub log_input_size: u32,
@@ -50,7 +45,6 @@ pub struct FriConfig {
     pub fri_step_sizes: Vec<u32>,
     pub log_last_layer_degree_bound: u32,
 }
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct ProofOfWorkConfig {
     pub n_bits: u32,
@@ -99,6 +93,7 @@ pub struct TracesDecommitment {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TableDecommitment {
+    pub n_values: usize,
     pub values: Vec<BigUint>,
 }
 
@@ -115,6 +110,18 @@ pub struct TableCommitmentWitness {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct VectorCommitmentWitness {
+    pub n_authentications: usize,
+    pub authentications: Vec<BigUint>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct TableCommitmentWitnessFlat {
+    pub vector: VectorCommitmentWitnessFlat,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct VectorCommitmentWitnessFlat {
+    pub n_authentications: usize,
     pub authentications: Vec<BigUint>,
 }
 
@@ -125,8 +132,9 @@ pub struct FriWitness {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct FriLayerWitness {
+    pub n_leaves: usize,
     pub leaves: Vec<BigUint>,
-    pub table_witness: TableCommitmentWitness,
+    pub table_witness: TableCommitmentWitnessFlat,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -136,10 +144,13 @@ pub struct CairoPublicInput {
     pub range_check_max: u32,
     pub layout: BigUint,
     pub dynamic_params: BTreeMap<String, BigUint>,
+    pub n_segments: usize,
     pub segments: Vec<SegmentInfo>,
     pub padding_addr: u32,
     pub padding_value: BigUint,
+    pub main_page_len: usize,
     pub main_page: Vec<PubilcMemoryCell>,
+    pub n_continuous_pages: usize,
     pub continuous_page_headers: Vec<BigUint>,
 }
 
@@ -314,7 +325,9 @@ impl IntoAst for TracesDecommitment {
 
 impl IntoAst for TableDecommitment {
     fn into_ast(self) -> Vec<Expr> {
-        self.values.into_ast()
+        let mut exprs = vec![Expr::Value(format!("{}", self.n_values))];
+        exprs.append(&mut self.values.into_ast());
+        exprs
     }
 }
 
@@ -333,9 +346,31 @@ impl IntoAst for TableCommitmentWitness {
     }
 }
 
+impl IntoAst for TableCommitmentWitnessFlat {
+    fn into_ast(self) -> Vec<Expr> {
+        self.vector.into_ast()
+    }
+}
+
 impl IntoAst for VectorCommitmentWitness {
     fn into_ast(self) -> Vec<Expr> {
-        self.authentications.into_ast()
+        let mut exprs = vec![Expr::Value(format!("{}", self.n_authentications))];
+        exprs.append(&mut self.authentications.into_ast());
+        exprs
+    }
+}
+
+impl IntoAst for VectorCommitmentWitnessFlat {
+    fn into_ast(self) -> Vec<Expr> {
+        let mut exprs = vec![Expr::Value(format!("{}", self.n_authentications))];
+        exprs.append(
+            &mut self
+                .authentications
+                .iter()
+                .flat_map(|x| x.into_ast())
+                .collect::<Vec<_>>(),
+        );
+        exprs
     }
 }
 
@@ -347,11 +382,14 @@ impl IntoAst for FriWitness {
 
 impl IntoAst for FriLayerWitness {
     fn into_ast(self) -> Vec<Expr> {
-        let mut exprs = self
-            .leaves
-            .iter()
-            .flat_map(|x| x.into_ast())
-            .collect::<Vec<_>>();
+        let mut exprs = vec![Expr::Value(format!("{}", self.n_leaves))];
+        exprs.append(
+            &mut self
+                .leaves
+                .iter()
+                .flat_map(|x| x.into_ast())
+                .collect::<Vec<_>>(),
+        );
         exprs.append(&mut self.table_witness.into_ast());
         exprs
     }
@@ -370,10 +408,13 @@ impl IntoAst for CairoPublicInput {
                 .map(|v| Expr::Value(format!("{v}")))
                 .collect(),
         ));
+        exprs.append(&mut self.n_segments.into_ast());
         exprs.append(&mut self.segments.into_ast());
         exprs.append(&mut self.padding_addr.into_ast());
         exprs.append(&mut self.padding_value.into_ast());
+        exprs.append(&mut self.main_page_len.into_ast());
         exprs.append(&mut self.main_page.into_ast());
+        exprs.append(&mut self.n_continuous_pages.into_ast());
         exprs.append(&mut self.continuous_page_headers.into_ast());
         exprs
     }

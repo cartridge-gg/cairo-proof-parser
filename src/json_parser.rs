@@ -115,7 +115,6 @@ impl ProofJSON {
         let proof_of_work = ProofOfWorkConfig {
             n_bits: fri.proof_of_work_bits,
         };
-
         let n_queries = fri.n_queries;
 
         let layer_log_sizes = self.layer_log_sizes()?;
@@ -199,10 +198,13 @@ impl ProofJSON {
             range_check_max: public_input.rc_max,
             layout,
             dynamic_params: dynamic_params.into_iter().collect(),
+            n_segments: memory_segments.len(),
             segments: memory_segments,
             padding_addr,
             padding_value,
+            main_page_len: main_page.len(),
             main_page,
+            n_continuous_pages: continuous_page_headers.len(),
             continuous_page_headers,
         })
     }
@@ -248,29 +250,35 @@ impl ProofJSON {
         StarkWitness {
             traces_decommitment: TracesDecommitment {
                 original: TableDecommitment {
+                    n_values: annotations.original_witness_leaves.len(),
                     values: annotations.original_witness_leaves.clone(),
                 },
                 interaction: TableDecommitment {
+                    n_values: annotations.interaction_witness_leaves.len(),
                     values: annotations.interaction_witness_leaves.clone(),
                 },
             },
             traces_witness: TracesWitness {
                 original: TableCommitmentWitness {
                     vector: VectorCommitmentWitness {
+                        n_authentications: annotations.original_witness_authentications.len(),
                         authentications: annotations.original_witness_authentications.clone(),
                     },
                 },
                 interaction: TableCommitmentWitness {
                     vector: VectorCommitmentWitness {
+                        n_authentications: annotations.interaction_witness_authentications.len(),
                         authentications: annotations.interaction_witness_authentications.clone(),
                     },
                 },
             },
             composition_decommitment: TableDecommitment {
+                n_values: annotations.composition_witness_leaves.len(),
                 values: annotations.composition_witness_leaves.clone(),
             },
             composition_witness: TableCommitmentWitness {
                 vector: VectorCommitmentWitness {
+                    n_authentications: annotations.composition_witness_authentications.len(),
                     authentications: annotations.composition_witness_authentications.clone(),
                 },
             },
@@ -279,9 +287,11 @@ impl ProofJSON {
                     .fri_witnesses
                     .iter()
                     .map(|w| FriLayerWitness {
+                        n_leaves: w.leaves.len(),
                         leaves: w.leaves.clone(),
-                        table_witness: TableCommitmentWitness {
-                            vector: VectorCommitmentWitness {
+                        table_witness: TableCommitmentWitnessFlat {
+                            vector: VectorCommitmentWitnessFlat {
+                                n_authentications: w.authentications.len(),
                                 authentications: w.authentications.clone(),
                             },
                         },

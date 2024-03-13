@@ -17,7 +17,6 @@ extern crate serde;
 
 pub use ast::{Expr, Exprs};
 
-#[derive(Debug)]
 pub struct ParseStarkProof {
     pub config: Exprs,
     pub public_input: Exprs,
