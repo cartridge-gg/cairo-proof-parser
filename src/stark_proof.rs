@@ -449,6 +449,30 @@ where
     }
 }
 
+impl From<StarkConfig> for Exprs {
+    fn from(v: StarkConfig) -> Self {
+        Exprs(v.into_ast())
+    }
+}
+
+impl From<CairoPublicInput> for Exprs {
+    fn from(v: CairoPublicInput) -> Self {
+        Exprs(v.into_ast())
+    }
+}
+
+impl From<StarkUnsentCommitment> for Exprs {
+    fn from(v: StarkUnsentCommitment) -> Self {
+        Exprs(v.into_ast())
+    }
+}
+
+impl From<StarkWitness> for Exprs {
+    fn from(v: StarkWitness) -> Self {
+        Exprs(v.into_ast())
+    }
+}
+
 impl From<StarkProof> for Exprs {
     fn from(proof: StarkProof) -> Self {
         Exprs(proof.into_ast())
