@@ -1,4 +1,4 @@
-use std::convert::TryFrom;
+use std::{convert::TryFrom, fmt::Display};
 
 use crate::{json_parser::ProofJSON, stark_proof::StarkProof};
 
@@ -10,18 +10,40 @@ mod layout;
 mod stark_proof;
 mod utils;
 
-extern crate clap;
+extern crate itertools;
 extern crate num_bigint;
 extern crate regex;
 extern crate serde;
 
 pub use ast::{Expr, Exprs};
+use itertools::chain;
 
+#[derive(Debug)]
 pub struct ParseStarkProof {
     pub config: Exprs,
     pub public_input: Exprs,
     pub unsent_commitment: Exprs,
     pub witness: Exprs,
+}
+
+impl Display for ParseStarkProof {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let result = chain![
+            self.config.iter(),
+            self.public_input.iter(),
+            self.unsent_commitment.iter(),
+            self.witness.iter()
+        ];
+
+        for (i, expr) in result.enumerate() {
+            if i != 0 {
+                write!(f, " ")?;
+            }
+            write!(f, "{expr}")?;
+        }
+
+        Ok(())
+    }
 }
 
 pub fn parse(input: String) -> anyhow::Result<ParseStarkProof> {
