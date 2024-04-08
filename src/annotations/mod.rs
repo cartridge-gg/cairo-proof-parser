@@ -32,17 +32,20 @@ impl Annotations {
             z,
             alpha,
             original_commitment_hash: Annotation::OriginalCommitmentHash
-                .extract(annotations)?.first()
+                .extract(annotations)?
+                .first()
                 .ok_or(anyhow::anyhow!("No OriginalCommitmentHash in annotations!"))?
                 .clone(),
             interaction_commitment_hash: Annotation::InteractionCommitmentHash
-                .extract(annotations)?.first()
+                .extract(annotations)?
+                .first()
                 .ok_or(anyhow::anyhow!(
                     "No InteractionCommitmentHash in annotations!"
                 ))?
                 .clone(),
             composition_commitment_hash: Annotation::CompositionCommitmentHash
-                .extract(annotations)?.first()
+                .extract(annotations)?
+                .first()
                 .ok_or(anyhow::anyhow!(
                     "No CompositionCommitmentHash in annotations!"
                 ))?
@@ -52,7 +55,8 @@ impl Annotations {
             fri_last_layer_coefficients: Annotation::FriLastLayerCoefficients
                 .extract(annotations)?,
             proof_of_work_nonce: Annotation::ProofOfWorkNonce
-                .extract(annotations)?.first()
+                .extract(annotations)?
+                .first()
                 .ok_or(anyhow::anyhow!("No ProofOfWorkNonce in annotations!"))?
                 .clone(),
             original_witness_leaves: Annotation::OriginalWitnessLeaves.extract(annotations)?,
