@@ -13,7 +13,7 @@ fn main() -> anyhow::Result<()> {
     io::stdin().read_to_string(&mut input)?;
 
     // Parse the input string into a proof structure
-    let proof = parse_raw(input)?;
+    let proof = parse_raw(&input)?;
 
     // Retrieve the output segment from the proof
     let output_segment = proof
@@ -51,13 +51,15 @@ fn main() -> anyhow::Result<()> {
     // Calculate the Poseidon hash of the program output
     let output_hash = poseidon_hash_many(&program_output);
 
-    let program_output_display: Vec<String> =
-        program_output.iter().map(|x| x.to_string()).collect();
+    let program_output_display: Vec<String> = program_output
+        .iter()
+        .map(std::string::ToString::to_string)
+        .collect();
     let output_hash_display = output_hash.to_string();
 
     // Print the results
-    println!("{:?}", program_output_display);
-    println!("{}", output_hash_display);
+    println!("{program_output_display:?}");
+    println!("{output_hash_display}");
 
     Ok(())
 }

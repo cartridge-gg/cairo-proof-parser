@@ -8,7 +8,7 @@ fn main() -> anyhow::Result<()> {
     io::stdin().read_to_string(&mut input)?;
 
     // Parse the input as an AST
-    let proof = parse(input)?;
+    let proof = parse(&input)?;
 
     println!("{proof}");
     Ok(())

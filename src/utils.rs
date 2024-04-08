@@ -1,3 +1,4 @@
+#[allow(clippy::cast_possible_truncation)]
 pub fn log2_if_power_of_2(x: u32) -> Option<u32> {
     if x != 0 && (x & (x - 1)) == 0 {
         Some(f64::from(x).log2() as u32)

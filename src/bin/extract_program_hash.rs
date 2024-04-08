@@ -13,12 +13,13 @@ fn main() -> anyhow::Result<()> {
     io::stdin().read_to_string(&mut input)?;
 
     // Parse the input string into a proof structure
-    let proof = parse_raw(input)?;
+    let proof = parse_raw(&input)?;
 
     // Retrieve the program segment from the proof
     let program_segment = proof
         .public_input
-        .segments.first()
+        .segments
+        .first()
         .ok_or_else(|| anyhow::Error::msg("Program segment not found"))?;
 
     // Retrieve the execution segment from the proof
@@ -63,7 +64,7 @@ fn main() -> anyhow::Result<()> {
     let program_hash_display = program_hash.to_string();
 
     // Print the results
-    println!("{}", program_hash_display);
+    println!("{program_hash_display}");
 
     Ok(())
 }

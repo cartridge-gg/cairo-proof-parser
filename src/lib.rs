@@ -46,8 +46,8 @@ impl Display for ParseStarkProof {
     }
 }
 
-pub fn parse(input: String) -> anyhow::Result<ParseStarkProof> {
-    let proof_json = serde_json::from_str::<ProofJSON>(&input)?;
+pub fn parse(input: &str) -> anyhow::Result<ParseStarkProof> {
+    let proof_json = serde_json::from_str::<ProofJSON>(input)?;
     let stark_proof = StarkProof::try_from(proof_json)?;
     Ok(ParseStarkProof {
         config: Exprs::from(stark_proof.config),
@@ -57,8 +57,8 @@ pub fn parse(input: String) -> anyhow::Result<ParseStarkProof> {
     })
 }
 
-pub fn parse_raw(input: String) -> anyhow::Result<StarkProof> {
-    let proof_json = serde_json::from_str::<ProofJSON>(&input)?;
+pub fn parse_raw(input: &str) -> anyhow::Result<StarkProof> {
+    let proof_json = serde_json::from_str::<ProofJSON>(input)?;
     let stark_proof = StarkProof::try_from(proof_json)?;
     Ok(stark_proof)
 }
