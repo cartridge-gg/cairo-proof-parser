@@ -64,7 +64,7 @@ pub fn extract_annotations(
             if kind == "Field Elements" {
                 res.extend(str_value.split(',').filter_map(BigUint::from_str_hex));
             } else if let Some(val) = BigUint::from_str_hex(str_value) {
-                res.push(val)
+                res.push(val);
             }
         }
     }

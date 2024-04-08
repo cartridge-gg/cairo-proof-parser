@@ -10,7 +10,14 @@ use crate::{
     annotations::{extract::FromStrHex, Annotations},
     builtins::Builtin,
     layout::Layout,
-    stark_proof::*,
+    stark_proof::{
+        CairoPublicInput, FriConfig, FriLayerWitness, FriUnsentCommitment, FriWitness,
+        ProofOfWorkConfig, ProofOfWorkUnsentCommitment, PubilcMemoryCell, SegmentInfo, StarkConfig,
+        StarkProof, StarkUnsentCommitment, StarkWitness, TableCommitmentConfig,
+        TableCommitmentWitness, TableCommitmentWitnessFlat, TableDecommitment, TracesConfig,
+        TracesDecommitment, TracesUnsentCommitment, TracesWitness, VectorCommitmentConfig,
+        VectorCommitmentWitness, VectorCommitmentWitnessFlat,
+    },
     utils::log2_if_power_of_2,
 };
 
@@ -246,7 +253,7 @@ impl ProofJSON {
             },
         }
     }
-    fn stark_witness(&self, annotations: &Annotations) -> StarkWitness {
+    fn stark_witness(annotations: &Annotations) -> StarkWitness {
         StarkWitness {
             traces_decommitment: TracesDecommitment {
                 original: TableDecommitment {
@@ -321,7 +328,7 @@ impl TryFrom<ProofJSON> for StarkProof {
             annotations.alpha.clone(),
         )?;
         let unsent_commitment = value.stark_unsent_commitment(&annotations);
-        let witness = value.stark_witness(&annotations);
+        let witness = ProofJSON::stark_witness(&annotations);
 
         Ok(StarkProof {
             config,
