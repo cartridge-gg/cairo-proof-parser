@@ -1,13 +1,22 @@
 [package]
 name = "cairo-proof-parser"
 version = "0.2.0"
+autobins = false
 
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [[bin]]
-name = "cairo-proof-parser"
-path = "src/bin/main.rs"  # Adjust the path to where your binary's main file is
+name = "cairo-proof-parser-display"
+path = "src/bin/display_proof.rs"  # Adjust the path to where your binary's main file is
+
+[[bin]]
+name = "cairo-proof-parser-output"
+path = "src/bin/extract_output.rs"  # Adjust the path to where your binary's main file is
+
+[[bin]]
+name = "cairo-proof-parser-hash"
+path = "src/bin/extract_program_hash.rs"  # Adjust the path to where your binary's main file is
 
 [dependencies]
 anyhow = "1.0.81"
@@ -16,3 +25,4 @@ num-bigint = { version = "0.4.4", features = ["serde"] }
 regex = "1.10.4"
 serde = { version = "1.0.197", features = ["derive"] }
 serde_json = "1.0.115"
+starknet-crypto = "0.6.2"
