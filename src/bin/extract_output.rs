@@ -42,10 +42,9 @@ fn main() -> anyhow::Result<()> {
     // Extract program output using the address range in the output segment
     let program_output: Vec<FieldElement> = (output_segment.begin_addr..output_segment.stop_ptr)
         .map(|addr| {
-            main_page_map
+            *main_page_map
                 .get(&addr)
                 .expect("Address not found in main page map")
-                .clone()
         })
         .collect();
 

@@ -184,7 +184,7 @@ impl ProofJSON {
             })
             .collect::<Vec<_>>();
         let layout = BigUint::from_bytes_be(&public_input.layout.bytes_encode());
-        let (padding_addr, padding_value) = match public_input.public_memory.get(0) {
+        let (padding_addr, padding_value) = match public_input.public_memory.first() {
             Some(m) => (
                 m.address,
                 BigUint::from_str_hex(&m.value).ok_or(anyhow::anyhow!("Invalid memory value"))?,

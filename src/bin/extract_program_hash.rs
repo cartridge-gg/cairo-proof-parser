@@ -18,8 +18,7 @@ fn main() -> anyhow::Result<()> {
     // Retrieve the program segment from the proof
     let program_segment = proof
         .public_input
-        .segments
-        .get(0)
+        .segments.first()
         .ok_or_else(|| anyhow::Error::msg("Program segment not found"))?;
 
     // Retrieve the execution segment from the proof
@@ -52,10 +51,9 @@ fn main() -> anyhow::Result<()> {
     // Extract program bytecode using the address range in the segments
     let program: Vec<FieldElement> = (initial_pc..(initial_fp - initial_pc - 1))
         .map(|addr| {
-            main_page_map
+            *main_page_map
                 .get(&addr)
                 .expect("Address not found in main page map")
-                .clone()
         })
         .collect();
 
