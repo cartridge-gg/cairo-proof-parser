@@ -20,6 +20,7 @@ extern crate starknet_crypto;
 
 pub use ast::{Expr, Exprs};
 use itertools::chain;
+use starknet_crypto::FieldElement;
 
 #[derive(Debug)]
 pub struct ParseStarkProof {
@@ -27,6 +28,17 @@ pub struct ParseStarkProof {
     pub public_input: Exprs,
     pub unsent_commitment: Exprs,
     pub witness: Exprs,
+}
+impl Into<Vec<FieldElement>> for ParseStarkProof {
+    fn into(self) -> Vec<FieldElement> {
+        chain![
+            <Exprs as Into<Vec<FieldElement>>>::into(self.config),
+            <Exprs as Into<Vec<FieldElement>>>::into(self.public_input),
+            <Exprs as Into<Vec<FieldElement>>>::into(self.unsent_commitment),
+            <Exprs as Into<Vec<FieldElement>>>::into(self.witness),
+        ]
+        .collect()
+    }
 }
 
 impl Display for ParseStarkProof {

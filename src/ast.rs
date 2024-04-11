@@ -3,10 +3,23 @@ use std::{
     ops::{Deref, DerefMut},
 };
 
+use starknet_crypto::FieldElement;
+
 #[derive(Debug, Clone)]
 pub enum Expr {
     Value(String),
     Array(Vec<Expr>),
+}
+impl Into<Vec<FieldElement>> for Expr {
+    fn into(self) -> Vec<FieldElement> {
+        match self {
+            Expr::Value(v) => vec![FieldElement::from_dec_str(&v).unwrap()],
+            Expr::Array(v) => v
+                .into_iter()
+                .flat_map(|x| <Expr as Into<Vec<FieldElement>>>::into(x))
+                .collect(),
+        }
+    }
 }
 
 impl Display for Expr {
@@ -26,6 +39,13 @@ impl Display for Expr {
 
 #[derive(Debug, Clone)]
 pub struct Exprs(pub Vec<Expr>);
+impl Into<Vec<FieldElement>> for Exprs {
+    fn into(self) -> Vec<FieldElement> {
+        self.iter()
+            .flat_map(|x| <Expr as Into<Vec<FieldElement>>>::into(x.to_owned()))
+            .collect()
+    }
+}
 
 impl Display for Exprs {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
