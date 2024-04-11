@@ -2,6 +2,7 @@
 name = "cairo-proof-parser"
 description = "Parser that translates beetwen different cairo proof formats"
 version = "0.3.0"
+license = "MIT"
 autobins = false
 
 
