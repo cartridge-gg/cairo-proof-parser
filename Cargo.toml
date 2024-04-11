@@ -1,6 +1,6 @@
 [package]
 name = "cairo-proof-parser"
-version = "0.2.0"
+version = "0.3.0"
 autobins = false
 
 
@@ -15,7 +15,7 @@ name = "cairo-proof-parser-output"
 path = "src/bin/extract_output.rs"  # Adjust the path to where your binary's main file is
 
 [[bin]]
-name = "cairo-proof-parser-hash"
+name = "cairo-proof-parser-program"
 path = "src/bin/extract_program_hash.rs"  # Adjust the path to where your binary's main file is
 
 [dependencies]

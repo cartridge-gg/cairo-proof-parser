@@ -7,6 +7,8 @@ mod ast;
 mod builtins;
 mod json_parser;
 mod layout;
+pub mod output;
+pub mod program;
 mod stark_proof;
 mod utils;
 
@@ -14,6 +16,7 @@ extern crate itertools;
 extern crate num_bigint;
 extern crate regex;
 extern crate serde;
+extern crate starknet_crypto;
 
 pub use ast::{Expr, Exprs};
 use itertools::chain;
