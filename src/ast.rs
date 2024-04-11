@@ -14,12 +14,9 @@ impl Display for Expr {
         match self {
             Expr::Value(v) => write!(f, "{v}"),
             Expr::Array(v) => {
-                write!(f, "{} ", v.len())?;
-                for (i, expr) in v.iter().enumerate() {
-                    if i != 0 {
-                        write!(f, " ")?;
-                    }
-                    write!(f, "{expr}")?;
+                write!(f, "{}", v.len())?;
+                for expr in v.iter() {
+                    write!(f, " {expr}")?;
                 }
                 Ok(())
             }
