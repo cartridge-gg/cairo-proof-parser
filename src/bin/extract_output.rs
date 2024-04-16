@@ -1,6 +1,3 @@
-extern crate cairo_proof_parser;
-extern crate starknet_crypto;
-
 use cairo_proof_parser::output::{extract_output, ExtractOutputResult};
 use std::io::{self, Read};
 
@@ -12,7 +9,7 @@ fn main() -> anyhow::Result<()> {
     let ExtractOutputResult {
         program_output,
         program_output_hash,
-    } = extract_output(input).unwrap();
+    } = extract_output(&input).unwrap();
 
     let program_output_display: Vec<String> = program_output
         .iter()
