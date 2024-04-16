@@ -1,4 +1,3 @@
-extern crate cairo_proof_parser;
 use std::io::{self, Read};
 
 use cairo_proof_parser::parse;

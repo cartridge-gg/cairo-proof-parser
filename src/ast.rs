@@ -14,9 +14,11 @@ impl Into<Vec<FieldElement>> for Expr {
     fn into(self) -> Vec<FieldElement> {
         match self {
             Expr::Value(v) => vec![FieldElement::from_dec_str(&v).unwrap()],
-            Expr::Array(v) => v
-                .into_iter()
-                .flat_map(|x| <Expr as Into<Vec<FieldElement>>>::into(x))
+            Expr::Array(v) => std::iter::once(FieldElement::from(v.len()))
+                .chain(
+                    v.into_iter()
+                        .flat_map(|x| <Expr as Into<Vec<FieldElement>>>::into(x)),
+                )
                 .collect(),
         }
     }

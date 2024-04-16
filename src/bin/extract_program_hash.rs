@@ -1,6 +1,3 @@
-extern crate cairo_proof_parser;
-extern crate starknet_crypto;
-
 use cairo_proof_parser::program::{extract_program, ExtractProgramResult};
 use std::io::{self, Read};
 
@@ -12,7 +9,7 @@ fn main() -> anyhow::Result<()> {
     let ExtractProgramResult {
         program: _,
         program_hash,
-    } = extract_program(input).unwrap();
+    } = extract_program(&input).unwrap();
 
     let program_hash_display = program_hash.to_string();
 

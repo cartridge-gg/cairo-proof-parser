@@ -12,9 +12,9 @@ pub struct ExtractProgramResult {
     pub program_hash: FieldElement,
 }
 
-pub fn extract_program(input: String) -> anyhow::Result<ExtractProgramResult> {
+pub fn extract_program(input: &str) -> anyhow::Result<ExtractProgramResult> {
     // Parse the input string into a proof structure
-    let proof = parse_raw(&input)?;
+    let proof = parse_raw(input)?;
 
     // Retrieve the program segment from the proof
     let program_segment = proof

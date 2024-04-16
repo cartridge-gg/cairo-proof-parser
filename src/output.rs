@@ -11,9 +11,9 @@ pub struct ExtractOutputResult {
     pub program_output_hash: FieldElement,
 }
 
-pub fn extract_output(input: String) -> anyhow::Result<ExtractOutputResult> {
+pub fn extract_output(input: &str) -> anyhow::Result<ExtractOutputResult> {
     // Parse the input string into a proof structure
-    let proof = parse_raw(&input)?;
+    let proof = parse_raw(input)?;
 
     // Retrieve the output segment from the proof
     let output_segment = proof
