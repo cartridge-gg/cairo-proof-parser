@@ -33,19 +33,19 @@ impl Annotations {
             alpha,
             original_commitment_hash: Annotation::OriginalCommitmentHash
                 .extract(annotations)?
-                .get(0)
+                .first()
                 .ok_or(anyhow::anyhow!("No OriginalCommitmentHash in annotations!"))?
                 .clone(),
             interaction_commitment_hash: Annotation::InteractionCommitmentHash
                 .extract(annotations)?
-                .get(0)
+                .first()
                 .ok_or(anyhow::anyhow!(
                     "No InteractionCommitmentHash in annotations!"
                 ))?
                 .clone(),
             composition_commitment_hash: Annotation::CompositionCommitmentHash
                 .extract(annotations)?
-                .get(0)
+                .first()
                 .ok_or(anyhow::anyhow!(
                     "No CompositionCommitmentHash in annotations!"
                 ))?
@@ -56,7 +56,7 @@ impl Annotations {
                 .extract(annotations)?,
             proof_of_work_nonce: Annotation::ProofOfWorkNonce
                 .extract(annotations)?
-                .get(0)
+                .first()
                 .ok_or(anyhow::anyhow!("No ProofOfWorkNonce in annotations!"))?
                 .clone(),
             original_witness_leaves: Annotation::OriginalWitnessLeaves.extract(annotations)?,

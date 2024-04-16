@@ -16,3 +16,6 @@
 
 # Envs
 **/.cargo/
+
+# venv
+.venv

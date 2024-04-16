@@ -34,9 +34,8 @@ impl Layout {
     ) -> Option<LayoutConstants> {
         let consts = self.get_consts();
 
-        let dynamic_params = match dynamic_params {
-            Some(dp) => dp,
-            None => return Some(consts),
+        let Some(dynamic_params) = dynamic_params else {
+            return Some(consts);
         };
 
         Some(LayoutConstants {
