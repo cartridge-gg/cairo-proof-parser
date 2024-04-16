@@ -4,6 +4,9 @@ use std::convert::TryInto;
 
 use crate::parse_raw;
 
+const PROGRAM_SEGMENT_OFFSET: usize = 0;
+const EXECUTION_SEGMENT_OFFSET: usize = 1;
+
 pub struct ExtractProgramResult {
     pub program: Vec<FieldElement>,
     pub program_hash: FieldElement,
@@ -17,14 +20,14 @@ pub fn extract_program(input: String) -> anyhow::Result<ExtractProgramResult> {
     let program_segment = proof
         .public_input
         .segments
-        .first()
+        .get(PROGRAM_SEGMENT_OFFSET)
         .ok_or_else(|| anyhow::Error::msg("Program segment not found"))?;
 
     // Retrieve the execution segment from the proof
     let execution_segment = proof
         .public_input
         .segments
-        .get(1)
+        .get(EXECUTION_SEGMENT_OFFSET)
         .ok_or_else(|| anyhow::Error::msg("Execution segment not found"))?;
 
     // Construct a map for the main page elements
