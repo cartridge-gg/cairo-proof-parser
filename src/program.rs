@@ -51,7 +51,7 @@ pub fn extract_program(input: &str) -> anyhow::Result<ExtractProgramResult> {
     let initial_fp = execution_segment.begin_addr;
 
     // Extract program bytecode using the address range in the segments
-    let program: Vec<FieldElement> = (initial_pc..(initial_fp - initial_pc - 1))
+    let program: Vec<FieldElement> = (initial_pc..(initial_fp - initial_pc - 2))
         .map(|addr| {
             *main_page_map
                 .get(&addr)
