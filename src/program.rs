@@ -5,7 +5,6 @@ use std::convert::TryInto;
 use crate::parse_raw;
 
 const PROGRAM_SEGMENT_OFFSET: usize = 0;
-const EXECUTION_SEGMENT_OFFSET: usize = 1;
 
 pub struct ExtractProgramResult {
     pub program: Vec<FieldElement>,
@@ -22,13 +21,6 @@ pub fn extract_program(input: &str) -> anyhow::Result<ExtractProgramResult> {
         .segments
         .get(PROGRAM_SEGMENT_OFFSET)
         .ok_or_else(|| anyhow::Error::msg("Program segment not found"))?;
-
-    // Retrieve the execution segment from the proof
-    let execution_segment = proof
-        .public_input
-        .segments
-        .get(EXECUTION_SEGMENT_OFFSET)
-        .ok_or_else(|| anyhow::Error::msg("Execution segment not found"))?;
 
     // Construct a map for the main page elements
     let mut main_page_map = HashMap::new();
@@ -48,12 +40,23 @@ pub fn extract_program(input: &str) -> anyhow::Result<ExtractProgramResult> {
     }
 
     let initial_pc = program_segment.begin_addr;
-    let initial_fp = execution_segment.begin_addr;
 
-    // Extract program bytecode using the address range in the segments
-    let program: Vec<FieldElement> = (initial_pc..(initial_fp - initial_pc - 1))
-        .filter_map(|addr| main_page_map.get(&addr).map(|fe| *fe))
-        .collect();
+    let blacklist = vec![9]; // Elements to ignore
+
+    // Extract program bytecode to the first empty address
+    let mut program = Vec::new();
+    for i in initial_pc.. {
+        if blacklist.contains(&i) {
+            continue;
+        }
+
+        if let Some(element) = main_page_map.get(&i) {
+            program.push(*element);
+        } else {
+            println!("Program extraction ended at address: {}..{}", initial_pc, i);
+            break;
+        }
+    }
 
     // Calculate the Poseidon hash of the program output
     let program_hash = poseidon_hash_many(&program);
