@@ -3,7 +3,7 @@ use std::{
     ops::{Deref, DerefMut},
 };
 
-use starknet_crypto::FieldElement;
+use starknet::core::types::FieldElement;
 
 #[derive(Debug, Clone)]
 pub enum Expr {

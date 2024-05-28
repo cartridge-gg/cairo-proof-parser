@@ -1,4 +1,5 @@
-use starknet_crypto::{poseidon_hash_many, FieldElement};
+use starknet::core::types::FieldElement;
+use starknet_crypto::{poseidon_hash_many, FieldElement as StarknetCryptoFieldElement};
 use std::collections::HashMap;
 use std::convert::TryInto;
 
@@ -47,9 +48,13 @@ pub fn extract_output(input: &str) -> anyhow::Result<ExtractOutputResult> {
                 .expect("Address not found in main page map")
         })
         .collect();
-
+    let array: Vec<StarknetCryptoFieldElement> = program_output
+        .iter()
+        .map(|x| StarknetCryptoFieldElement::from_dec_str(&x.to_string()).unwrap())
+        .collect();
     // Calculate the Poseidon hash of the program output
-    let program_output_hash = poseidon_hash_many(&program_output);
+    let program_output_hash =
+        FieldElement::from_dec_str(&poseidon_hash_many(&array).to_string()).unwrap();
 
     Ok(ExtractOutputResult {
         program_output,

@@ -14,7 +14,7 @@ mod utils;
 
 pub use ast::{Expr, Exprs};
 use itertools::chain;
-use starknet_crypto::FieldElement;
+use starknet::core::types::FieldElement;
 
 #[derive(Debug)]
 pub struct ParseStarkProof {

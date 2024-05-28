@@ -58,22 +58,22 @@ async fn main() -> anyhow::Result<()> {
     let mut input = String::new();
     io::stdin().read_to_string(&mut input)?;
 
-    let ExtractProgramResult {
-        program: _,
-        program_hash,
-    } = extract_program(&input).unwrap();
+    // let ExtractProgramResult {
+    //     program: _,
+    //     program_hash,
+    // } = extract_program(&input).unwrap();
 
-    let ExtractOutputResult {
-        program_output: _,
-        program_output_hash,
-    } = extract_output(&input).unwrap();
+    // let ExtractOutputResult {
+    //     program_output: _,
+    //     program_output_hash,
+    // } = extract_output(&input).unwrap();
 
-    let expected_fact = poseidon_hash_many(&[program_hash, program_output_hash]);
+    // let expected_fact = poseidon_hash_many(&[program_hash, program_output_hash]);
 
-    let serialized_proof: Vec<FieldElement> = parse(&input)?.into();
-    let tx = verify_and_register_fact(account, serialized_proof).await?;
-    println!("tx: {tx}");
-    println!("expected_fact: {}", expected_fact.to_string());
+    // let serialized_proof: Vec<FieldElement> = parse(&input)?.into();
+    // let tx = verify_and_register_fact(account, serialized_proof).await?;
+    // println!("tx: {tx}");
+    // println!("expected_fact: {}", expected_fact.to_string());
 
     Ok(())
 }
