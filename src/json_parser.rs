@@ -231,7 +231,8 @@ impl ProofJSON {
             })
             .collect::<anyhow::Result<Vec<_>>>()
     }
-    fn continuous_page_headers(
+
+    fn _continuous_page_headers(
         _public_memory: &[PublicMemoryElement],
         _z: BigUint,
         _alpha: BigUint,
@@ -239,6 +240,7 @@ impl ProofJSON {
         //TODO: Do it properly
         Ok(vec![])
     }
+
     fn stark_unsent_commitment(&self, annotations: &Annotations) -> StarkUnsentCommitment {
         StarkUnsentCommitment {
             traces: TracesUnsentCommitment {

@@ -9,6 +9,7 @@ pub enum Error {
     Error,
     DataLeft,
     NoDataLeft,
+    InvalidArrayLen,
 }
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -31,6 +32,7 @@ impl Display for Error {
             Error::DataLeft => formatter.write_str("unexpected end of input"),
             Error::Error => formatter.write_str("Invalid proof hex"),
             Error::NoDataLeft => formatter.write_str("unexpected end of input"),
+            Error::InvalidArrayLen => formatter.write_str("invalid array length"),
         }
     }
 }

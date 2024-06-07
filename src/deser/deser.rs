@@ -1,10 +1,6 @@
-use std::ops::{AddAssign, MulAssign, Neg};
+use std::ops::{AddAssign, MulAssign};
 
-use anyhow::anyhow;
-use serde::de::{
-    self, DeserializeSeed, EnumAccess, IntoDeserializer, MapAccess, SeqAccess, VariantAccess,
-    Visitor,
-};
+use serde::de::{self, DeserializeSeed, IntoDeserializer, MapAccess, SeqAccess, Visitor};
 use serde::Deserialize;
 use starknet_crypto::FieldElement;
 
@@ -59,70 +55,70 @@ where
 impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     type Error = Error;
 
-    fn deserialize_any<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_any<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
         unimplemented!()
     }
 
-    fn deserialize_bool<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_bool<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
         unimplemented!()
     }
 
-    fn deserialize_i8<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_i8<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
         unimplemented!()
     }
 
-    fn deserialize_i16<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_i16<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
         unimplemented!()
     }
 
-    fn deserialize_i32<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_i32<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
         unimplemented!()
     }
 
-    fn deserialize_i64<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_i64<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
         unimplemented!()
     }
 
-    fn deserialize_u8<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_u8<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
         unimplemented!()
     }
 
-    fn deserialize_u16<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_u16<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
         unimplemented!()
     }
 
-    fn deserialize_u32<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_u32<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
         unimplemented!()
     }
 
-    fn deserialize_u64<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_u64<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
@@ -182,7 +178,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
         unimplemented!()
     }
 
-    fn deserialize_option<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_option<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
@@ -190,21 +186,21 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     }
 
     // In Serde, unit means an anonymous value containing no data.
-    fn deserialize_unit<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_unit<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
         unimplemented!()
     }
 
-    fn deserialize_unit_struct<V>(self, _name: &'static str, visitor: V) -> Result<V::Value>
+    fn deserialize_unit_struct<V>(self, _name: &'static str, _visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
         unimplemented!()
     }
 
-    fn deserialize_newtype_struct<V>(self, _name: &'static str, visitor: V) -> Result<V::Value>
+    fn deserialize_newtype_struct<V>(self, _name: &'static str, _visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
@@ -215,7 +211,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        todo!()
+        visitor.visit_seq(DeserArray::new(self))
     }
 
     // Tuples look just like sequences in JSON. Some formats may be able to
@@ -247,7 +243,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     // Much like `deserialize_seq` but calls the visitors `visit_map` method
     // with a `MapAccess` implementation, rather than the visitor's `visit_seq`
     // method with a `SeqAccess` implementation.
-    fn deserialize_map<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_map<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
@@ -262,24 +258,21 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     // the fields cannot be known ahead of time is probably a map.
     fn deserialize_struct<V>(
         self,
-        name: &'static str,
+        _name: &'static str,
         fields: &'static [&'static str],
         visitor: V,
     ) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
-        println!("deserializing struct {name:?}");
-        println!("deserializing struct {fields:?}");
-        let map = DeserStruct::new(self, fields);
-        visitor.visit_map(map)
+        visitor.visit_map(DeserStruct::new(self, fields))
     }
 
     fn deserialize_enum<V>(
         self,
         _name: &'static str,
         _variants: &'static [&'static str],
-        visitor: V,
+        _visitor: V,
     ) -> Result<V::Value>
     where
         V: Visitor<'de>,
@@ -287,14 +280,14 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
         unimplemented!()
     }
 
-    fn deserialize_identifier<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_identifier<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
         unimplemented!()
     }
 
-    fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_ignored_any<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
@@ -344,59 +337,44 @@ impl<'a, 'de> MapAccess<'de> for DeserStruct<'a, 'de> {
     }
 }
 
-// struct CommaSeparated<'a, 'de: 'a> {
-//     de: &'a mut Deserializer<'de>,
-//     first: bool,
-// }
+struct DeserArray<'a, 'de: 'a> {
+    de: &'a mut Deserializer<'de>,
+    left: Option<usize>,
+}
 
-// impl<'a, 'de> CommaSeparated<'a, 'de> {
-//     fn new(de: &'a mut Deserializer<'de>) -> Self {
-//         CommaSeparated { de, first: true }
-//     }
-// }
+impl<'a, 'de> DeserArray<'a, 'de> {
+    fn new(de: &'a mut Deserializer<'de>) -> Self {
+        DeserArray { de, left: None }
+    }
+}
 
-// // `SeqAccess` is provided to the `Visitor` to give it the ability to iterate
-// // through elements of the sequence.
-// impl<'de, 'a> SeqAccess<'de> for CommaSeparated<'a, 'de> {
-//     type Error = Error;
+impl<'de, 'a> SeqAccess<'de> for DeserArray<'a, 'de> {
+    type Error = Error;
 
-//     fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>>
-//     where
-//         T: DeserializeSeed<'de>,
-//     {
-//         todo!()
-//     }
-// }
+    fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>>
+    where
+        T: DeserializeSeed<'de>,
+    {
+        if let Some(left) = self.left {
+            Ok(if left > 0 {
+                self.left = Some(left - 1);
+                Some(seed.deserialize(&mut *self.de)?)
+            } else {
+                None
+            })
+        } else {
+            let len = self
+                .de
+                .take()?
+                .to_string()
+                .parse::<usize>()
+                .map_err(|_| Error::InvalidArrayLen)?;
 
-// // `MapAccess` is provided to the `Visitor` to give it the ability to iterate
-// // through entries of the map.
-// impl<'de, 'a> MapAccess<'de> for CommaSeparated<'a, 'de> {
-//     type Error = Error;
-
-//     fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>>
-//     where
-//         K: DeserializeSeed<'de>,
-//     {
-//         todo!()
-//     }
-
-//     fn next_value_seed<V>(&mut self, seed: V) -> Result<V::Value>
-//     where
-//         V: DeserializeSeed<'de>,
-//     {
-//         todo!()
-//     }
-// }
-
-// struct Enum<'a, 'de: 'a> {
-//     de: &'a mut Deserializer<'de>,
-// }
-
-// impl<'a, 'de> Enum<'a, 'de> {
-//     fn new(de: &'a mut Deserializer<'de>) -> Self {
-//         Enum { de }
-//     }
-// }
+            self.left = Some(len);
+            self.next_element_seed(seed)
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -413,6 +391,12 @@ mod tests {
         a: FieldElement,
         b: Basic,
         c: FieldElement,
+    }
+
+    #[derive(Deserialize, Debug, PartialEq, Eq)]
+    struct WithASequence {
+        a: Vec<FieldElement>,
+        b: FieldElement,
     }
 
     #[test]
@@ -438,6 +422,20 @@ mod tests {
                 b: 12u64.into(),
             },
             c: 2u64.into(),
+        };
+
+        assert_eq!(de, expected);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_deser_seq() -> Result<()> {
+        let de: WithASequence =
+            from_felts(&vec![2u64.into(), 11u64.into(), 12u64.into(), 2u64.into()])?;
+        let expected = WithASequence {
+            a: vec![11u64.into(), 12u64.into()],
+            b: 2u64.into(),
         };
 
         assert_eq!(de, expected);
