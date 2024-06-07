@@ -11,7 +11,7 @@ use starknet_crypto::FieldElement;
 use super::errors::{Error, Result};
 
 pub struct Deserializer<'de> {
-    input: &'de Vec<FieldElement>,
+    input: &'de [FieldElement],
 }
 
 impl<'de> Deserializer<'de> {
@@ -22,7 +22,14 @@ impl<'de> Deserializer<'de> {
             .ok_or(Error::NoDataLeft)
     }
 
-    pub fn from_str(input: &'de Vec<FieldElement>) -> Self {
+    pub fn take(&mut self) -> Result<FieldElement> {
+        let el = self.peek()?;
+        self.input = &self.input[1..];
+
+        Ok(el)
+    }
+
+    pub fn from_felts(input: &'de Vec<FieldElement>) -> Self {
         Deserializer { input }
     }
 }
@@ -36,11 +43,11 @@ impl<'de> Deserializer<'de> {
     }
 }
 
-pub fn from_str<'a, T>(s: &'a Vec<FieldElement>) -> Result<T>
+pub fn from_felts<'a, T>(s: &'a Vec<FieldElement>) -> Result<T>
 where
     T: Deserialize<'a>,
 {
-    let mut deserializer = Deserializer::from_str(s);
+    let mut deserializer = Deserializer::from_felts(s);
     let t = T::deserialize(&mut deserializer)?;
     if deserializer.input.is_empty() {
         Ok(t)
@@ -149,7 +156,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        todo!("should be possible")
+        visitor.visit_string(self.take()?.to_string())
     }
 
     fn deserialize_string<V>(self, visitor: V) -> Result<V::Value>
@@ -255,14 +262,17 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     // the fields cannot be known ahead of time is probably a map.
     fn deserialize_struct<V>(
         self,
-        _name: &'static str,
-        _fields: &'static [&'static str],
+        name: &'static str,
+        fields: &'static [&'static str],
         visitor: V,
     ) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
-        todo!()
+        println!("deserializing struct {name:?}");
+        println!("deserializing struct {fields:?}");
+        let map = DeserStruct::new(self, fields);
+        visitor.visit_map(map)
     }
 
     fn deserialize_enum<V>(
@@ -292,56 +302,146 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     }
 }
 
-struct CommaSeparated<'a, 'de: 'a> {
+struct DeserStruct<'a, 'de: 'a> {
     de: &'a mut Deserializer<'de>,
-    first: bool,
+    fields: &'static [&'static str],
+    index: usize,
 }
 
-impl<'a, 'de> CommaSeparated<'a, 'de> {
-    fn new(de: &'a mut Deserializer<'de>) -> Self {
-        CommaSeparated { de, first: true }
+impl<'a, 'de> DeserStruct<'a, 'de> {
+    fn new(de: &'a mut Deserializer<'de>, fields: &'static [&'static str]) -> Self {
+        Self {
+            de,
+            fields,
+            index: 0,
+        }
     }
 }
 
-// `SeqAccess` is provided to the `Visitor` to give it the ability to iterate
-// through elements of the sequence.
-impl<'de, 'a> SeqAccess<'de> for CommaSeparated<'a, 'de> {
-    type Error = Error;
-
-    fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>>
-    where
-        T: DeserializeSeed<'de>,
-    {
-        todo!()
-    }
-}
-
-// `MapAccess` is provided to the `Visitor` to give it the ability to iterate
-// through entries of the map.
-impl<'de, 'a> MapAccess<'de> for CommaSeparated<'a, 'de> {
+impl<'a, 'de> MapAccess<'de> for DeserStruct<'a, 'de> {
     type Error = Error;
 
     fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>>
     where
-        K: DeserializeSeed<'de>,
+        K: serde::de::DeserializeSeed<'de>,
     {
-        todo!()
+        if self.index < self.fields.len() {
+            seed.deserialize(self.fields[self.index].into_deserializer())
+                .map(Some)
+        } else {
+            Ok(None)
+        }
     }
 
     fn next_value_seed<V>(&mut self, seed: V) -> Result<V::Value>
     where
-        V: DeserializeSeed<'de>,
+        V: serde::de::DeserializeSeed<'de>,
     {
-        todo!()
+        // Deserialize the value for the current field
+        let value = seed.deserialize(&mut *self.de)?;
+        self.index += 1;
+        Ok(value)
     }
 }
 
-struct Enum<'a, 'de: 'a> {
-    de: &'a mut Deserializer<'de>,
-}
+// struct CommaSeparated<'a, 'de: 'a> {
+//     de: &'a mut Deserializer<'de>,
+//     first: bool,
+// }
 
-impl<'a, 'de> Enum<'a, 'de> {
-    fn new(de: &'a mut Deserializer<'de>) -> Self {
-        Enum { de }
+// impl<'a, 'de> CommaSeparated<'a, 'de> {
+//     fn new(de: &'a mut Deserializer<'de>) -> Self {
+//         CommaSeparated { de, first: true }
+//     }
+// }
+
+// // `SeqAccess` is provided to the `Visitor` to give it the ability to iterate
+// // through elements of the sequence.
+// impl<'de, 'a> SeqAccess<'de> for CommaSeparated<'a, 'de> {
+//     type Error = Error;
+
+//     fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>>
+//     where
+//         T: DeserializeSeed<'de>,
+//     {
+//         todo!()
+//     }
+// }
+
+// // `MapAccess` is provided to the `Visitor` to give it the ability to iterate
+// // through entries of the map.
+// impl<'de, 'a> MapAccess<'de> for CommaSeparated<'a, 'de> {
+//     type Error = Error;
+
+//     fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>>
+//     where
+//         K: DeserializeSeed<'de>,
+//     {
+//         todo!()
+//     }
+
+//     fn next_value_seed<V>(&mut self, seed: V) -> Result<V::Value>
+//     where
+//         V: DeserializeSeed<'de>,
+//     {
+//         todo!()
+//     }
+// }
+
+// struct Enum<'a, 'de: 'a> {
+//     de: &'a mut Deserializer<'de>,
+// }
+
+// impl<'a, 'de> Enum<'a, 'de> {
+//     fn new(de: &'a mut Deserializer<'de>) -> Self {
+//         Enum { de }
+//     }
+// }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[derive(Deserialize, Debug, PartialEq, Eq)]
+    struct Basic {
+        a: FieldElement,
+        b: FieldElement,
+    }
+
+    #[derive(Deserialize, Debug, PartialEq, Eq)]
+    struct Nested {
+        a: FieldElement,
+        b: Basic,
+        c: FieldElement,
+    }
+
+    #[test]
+    fn test_deser_basic() -> Result<()> {
+        let de: Basic = from_felts(&vec![1u64.into(), 2u64.into()])?;
+        let expected = Basic {
+            a: 1u64.into(),
+            b: 2u64.into(),
+        };
+
+        assert_eq!(de, expected);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_deser_nested() -> Result<()> {
+        let de: Nested = from_felts(&vec![1u64.into(), 11u64.into(), 12u64.into(), 2u64.into()])?;
+        let expected = Nested {
+            a: 1u64.into(),
+            b: Basic {
+                a: 11u64.into(),
+                b: 12u64.into(),
+            },
+            c: 2u64.into(),
+        };
+
+        assert_eq!(de, expected);
+
+        Ok(())
     }
 }

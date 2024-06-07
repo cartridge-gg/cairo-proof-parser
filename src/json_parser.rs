@@ -3,8 +3,10 @@ use std::{
     convert::TryFrom,
 };
 
+use anyhow::anyhow;
 use num_bigint::BigUint;
 use serde::Deserialize;
+use starknet_crypto::FieldElement;
 
 use crate::{
     annotations::{extract::FromStrHex, Annotations},
@@ -26,6 +28,7 @@ pub struct ProofJSON {
     proof_parameters: ProofParameters,
     annotations: Vec<String>,
     public_input: PublicInput,
+    proof_hex: String,
 }
 
 #[derive(Deserialize, Debug, Clone, PartialEq)]
@@ -176,11 +179,11 @@ impl ProofJSON {
     }
     fn public_input(
         public_input: PublicInput,
-        z: BigUint,
-        alpha: BigUint,
+        // z: BigUint,
+        // alpha: BigUint,
     ) -> anyhow::Result<CairoPublicInput> {
-        let continuous_page_headers =
-            Self::continuous_page_headers(&public_input.public_memory, z, alpha)?;
+        let continuous_page_headers = vec![];
+        // Self::continuous_page_headers(&public_input.public_memory, z, alpha)?; this line does for now anyway
         let main_page = Self::main_page(&public_input.public_memory)?;
         let dynamic_params = public_input.dynamic_params.unwrap_or_default();
         let memory_segments = Builtin::sort_segments(public_input.memory_segments)
@@ -309,10 +312,32 @@ impl ProofJSON {
     }
 }
 
+#[derive(Debug)]
+struct HexProof(Vec<FieldElement>);
+
+impl TryFrom<&str> for HexProof {
+    type Error = anyhow::Error;
+    fn try_from(value: &str) -> anyhow::Result<Self> {
+        let hex: Vec<u8> = prefix_hex::decode(value).map_err(|_| anyhow!("Invalid hex"))?;
+        let mut result = vec![];
+        for chunk in hex.chunks(32) {
+            result.push(FieldElement::from_byte_slice_be(chunk)?);
+        }
+        Ok(HexProof(result))
+    }
+}
+
 impl TryFrom<ProofJSON> for StarkProof {
     type Error = anyhow::Error;
     fn try_from(value: ProofJSON) -> anyhow::Result<Self> {
         let config = value.stark_config()?;
+
+        let hex = HexProof::try_from(value.proof_hex.as_str())?;
+        println!("here {hex:?}");
+
+        for f in hex.0.iter() {
+            println!("{f}");
+        }
 
         let annotations = Annotations::new(
             &value
@@ -324,8 +349,8 @@ impl TryFrom<ProofJSON> for StarkProof {
         )?;
         let public_input = ProofJSON::public_input(
             value.public_input.clone(),
-            annotations.z.clone(),
-            annotations.alpha.clone(),
+            // annotations.z.clone(),
+            // annotations.alpha.clone(),
         )?;
         let unsent_commitment = value.stark_unsent_commitment(&annotations);
         let witness = ProofJSON::stark_witness(&annotations);
