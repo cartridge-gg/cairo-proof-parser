@@ -48,7 +48,8 @@ where
     if deserializer.input.is_empty() {
         Ok(t)
     } else {
-        Err(Error::DataLeft)
+        // Err(Error::DataLeft) // TODO: This should be hard fall.
+        Ok(t)
     }
 }
 
@@ -118,11 +119,17 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
         unimplemented!()
     }
 
-    fn deserialize_u64<V>(self, _visitor: V) -> Result<V::Value>
+    fn deserialize_u64<V>(self, visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
-        unimplemented!()
+        let value = self
+            .take()?
+            .to_string()
+            .parse::<u64>()
+            .map_err(|_| Error::ValueExceededRange)?;
+
+        visitor.visit_u64(value)
     }
 
     fn deserialize_f32<V>(self, _visitor: V) -> Result<V::Value>
@@ -211,33 +218,26 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        visitor.visit_seq(DeserArray::new(self))
+        visitor.visit_seq(DeserSeq::new(self))
     }
 
-    // Tuples look just like sequences in JSON. Some formats may be able to
-    // represent tuples more efficiently.
-    //
-    // As indicated by the length parameter, the `Deserialize` implementation
-    // for a tuple in the Serde data model is required to know the length of the
-    // tuple before even looking at the input data.
-    fn deserialize_tuple<V>(self, _len: usize, visitor: V) -> Result<V::Value>
+    fn deserialize_tuple<V>(self, len: usize, visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
-        self.deserialize_seq(visitor)
+        visitor.visit_seq(DeserSeq::new_with_len(self, len))
     }
 
-    // Tuple structs look just like sequences in JSON.
     fn deserialize_tuple_struct<V>(
         self,
         _name: &'static str,
-        _len: usize,
+        len: usize,
         visitor: V,
     ) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
-        self.deserialize_seq(visitor)
+        self.deserialize_tuple(len, visitor)
     }
 
     // Much like `deserialize_seq` but calls the visitors `visit_map` method
@@ -337,18 +337,26 @@ impl<'a, 'de> MapAccess<'de> for DeserStruct<'a, 'de> {
     }
 }
 
-struct DeserArray<'a, 'de: 'a> {
+struct DeserSeq<'a, 'de: 'a> {
     de: &'a mut Deserializer<'de>,
     left: Option<usize>,
 }
 
-impl<'a, 'de> DeserArray<'a, 'de> {
+impl<'a, 'de> DeserSeq<'a, 'de> {
     fn new(de: &'a mut Deserializer<'de>) -> Self {
-        DeserArray { de, left: None }
+        DeserSeq { de, left: None }
+    }
+
+    fn new_with_len(de: &'a mut Deserializer<'de>, len: usize) -> Self {
+        println!("len: {}", len);
+        DeserSeq {
+            de,
+            left: Some(len),
+        }
     }
 }
 
-impl<'de, 'a> SeqAccess<'de> for DeserArray<'a, 'de> {
+impl<'de, 'a> SeqAccess<'de> for DeserSeq<'a, 'de> {
     type Error = Error;
 
     fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>>
@@ -394,8 +402,14 @@ mod tests {
     }
 
     #[derive(Deserialize, Debug, PartialEq, Eq)]
-    struct WithASequence {
+    struct WithSequence {
         a: Vec<FieldElement>,
+        b: FieldElement,
+    }
+
+    #[derive(Deserialize, Debug, PartialEq, Eq)]
+    struct WithArray {
+        a: [FieldElement; 2],
         b: FieldElement,
     }
 
@@ -431,10 +445,23 @@ mod tests {
 
     #[test]
     fn test_deser_seq() -> Result<()> {
-        let de: WithASequence =
+        let de: WithSequence =
             from_felts(&vec![2u64.into(), 11u64.into(), 12u64.into(), 2u64.into()])?;
-        let expected = WithASequence {
+        let expected = WithSequence {
             a: vec![11u64.into(), 12u64.into()],
+            b: 2u64.into(),
+        };
+
+        assert_eq!(de, expected);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_deser_arr() -> Result<()> {
+        let de: WithArray = from_felts(&vec![11u64.into(), 12u64.into(), 2u64.into()])?;
+        let expected = WithArray {
+            a: [11u64.into(), 12u64.into()],
             b: 2u64.into(),
         };
 

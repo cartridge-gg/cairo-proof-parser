@@ -10,6 +10,7 @@ pub enum Error {
     DataLeft,
     NoDataLeft,
     InvalidArrayLen,
+    ValueExceededRange,
 }
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -33,6 +34,7 @@ impl Display for Error {
             Error::Error => formatter.write_str("Invalid proof hex"),
             Error::NoDataLeft => formatter.write_str("unexpected end of input"),
             Error::InvalidArrayLen => formatter.write_str("invalid array length"),
+            Error::ValueExceededRange => formatter.write_str("value exceeded range"),
         }
     }
 }
