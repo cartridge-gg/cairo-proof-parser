@@ -1,6 +1,8 @@
 use std::collections::BTreeMap;
 
 use num_bigint::BigUint;
+use serde::Deserialize;
+use starknet_crypto::FieldElement;
 
 use crate::ast::{Expr, Exprs};
 
@@ -9,7 +11,7 @@ pub struct StarkProof {
     pub config: StarkConfig,
     pub public_input: CairoPublicInput,
     pub unsent_commitment: StarkUnsentCommitment,
-    pub witness: StarkWitness,
+    // pub witness: StarkWitness,
 }
 #[derive(Debug, Clone, PartialEq)]
 pub struct StarkConfig {
@@ -50,68 +52,69 @@ pub struct ProofOfWorkConfig {
     pub n_bits: u32,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct StarkUnsentCommitment {
     pub traces: TracesUnsentCommitment,
-    pub composition: BigUint,
-    pub oods_values: Vec<BigUint>,
+    pub composition: FieldElement,
+    pub oods_values: Vec<FieldElement>,
     pub fri: FriUnsentCommitment,
     pub proof_of_work: ProofOfWorkUnsentCommitment,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct TracesUnsentCommitment {
-    pub original: BigUint,
-    pub interaction: BigUint,
+    pub original: FieldElement,
+    pub interaction: FieldElement,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct FriUnsentCommitment {
-    pub inner_layers: Vec<BigUint>,
-    pub last_layer_coefficients: Vec<BigUint>,
+    pub inner_layers: Vec<FieldElement>,
+    pub last_layer_coefficients: Vec<FieldElement>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct ProofOfWorkUnsentCommitment {
-    pub nonce: BigUint,
+    pub nonce: FieldElement,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct StarkWitness {
-    pub traces_decommitment: TracesDecommitment,
+    // pub traces_decommitment: TracesDecommitment,
     pub traces_witness: TracesWitness,
-    pub composition_decommitment: TableDecommitment,
-    pub composition_witness: TableCommitmentWitness,
-    pub fri_witness: FriWitness,
+    // pub composition_decommitment: TableDecommitment,
+    // pub composition_witness: TableCommitmentWitness,
+    // pub fri_witness: FriWitness,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct TracesDecommitment {
-    pub original: TableDecommitment,
-    pub interaction: TableDecommitment,
+    pub original: Vec<FieldElement>,
+    pub interaction: Vec<FieldElement>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct TableDecommitment {
     pub n_values: usize,
-    pub values: Vec<BigUint>,
+    pub values: Vec<FieldElement>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct TracesWitness {
-    pub original: TableCommitmentWitness,
-    pub interaction: TableCommitmentWitness,
+    pub original: Vec<FieldElement>,
+    pub skip: Vec<FieldElement>,
+    pub interaction: Vec<FieldElement>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct TableCommitmentWitness {
     pub vector: VectorCommitmentWitness,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct VectorCommitmentWitness {
     pub n_authentications: usize,
-    pub authentications: Vec<BigUint>,
+    pub authentications: Vec<FieldElement>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -119,10 +122,10 @@ pub struct TableCommitmentWitnessFlat {
     pub vector: VectorCommitmentWitnessFlat,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct VectorCommitmentWitnessFlat {
     pub n_authentications: usize,
-    pub authentications: Vec<BigUint>,
+    pub authentications: Vec<FieldElement>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -149,13 +152,13 @@ pub struct CairoPublicInput {
     pub padding_addr: u32,
     pub padding_value: BigUint,
     pub main_page_len: usize,
-    pub main_page: Vec<PubilcMemoryCell>,
+    pub main_page: Vec<PublicMemoryCell>,
     pub n_continuous_pages: usize,
     pub continuous_page_headers: Vec<BigUint>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct PubilcMemoryCell {
+pub struct PublicMemoryCell {
     pub address: u32,
     pub value: BigUint,
 }
@@ -200,7 +203,7 @@ impl IntoAst for StarkProof {
             self.config.into_ast(),
             self.public_input.into_ast(),
             self.unsent_commitment.into_ast(),
-            self.witness.into_ast(),
+            // self.witness.into_ast(),
         ]
         .concat()
     }
@@ -264,10 +267,10 @@ impl IntoAst for StarkUnsentCommitment {
     fn into_ast(self) -> Vec<Expr> {
         let mut exprs = vec![];
         exprs.append(&mut self.traces.into_ast());
-        exprs.append(&mut self.composition.into_ast());
-        exprs.append(&mut self.oods_values.into_ast());
-        exprs.append(&mut self.fri.into_ast());
-        exprs.append(&mut self.proof_of_work.into_ast());
+        // exprs.append(&mut self.composition.into_ast());
+        // exprs.append(&mut self.oods_values.into_ast());
+        // exprs.append(&mut self.fri.into_ast());
+        // exprs.append(&mut self.proof_of_work.into_ast());
         exprs
     }
 }
@@ -275,8 +278,8 @@ impl IntoAst for StarkUnsentCommitment {
 impl IntoAst for TracesUnsentCommitment {
     fn into_ast(self) -> Vec<Expr> {
         let mut exprs = vec![];
-        exprs.append(&mut self.original.into_ast());
-        exprs.append(&mut self.interaction.into_ast());
+        // exprs.append(&mut self.original.into_ast());
+        // exprs.append(&mut self.interaction.into_ast());
         exprs
     }
 }
@@ -284,8 +287,8 @@ impl IntoAst for TracesUnsentCommitment {
 impl IntoAst for FriUnsentCommitment {
     fn into_ast(self) -> Vec<Expr> {
         let mut exprs = vec![];
-        exprs.append(&mut self.inner_layers.into_ast());
-        exprs.append(&mut self.last_layer_coefficients.into_ast());
+        // exprs.append(&mut self.inner_layers.into_ast());
+        // exprs.append(&mut self.last_layer_coefficients.into_ast());
         exprs
     }
 }
@@ -305,11 +308,11 @@ impl IntoAst for ProofOfWorkConfig {
 impl IntoAst for StarkWitness {
     fn into_ast(self) -> Vec<Expr> {
         let mut exprs = vec![];
-        exprs.append(&mut self.traces_decommitment.into_ast());
-        exprs.append(&mut self.traces_witness.into_ast());
-        exprs.append(&mut self.composition_decommitment.into_ast());
-        exprs.append(&mut self.composition_witness.into_ast());
-        exprs.append(&mut self.fri_witness.into_ast());
+        // exprs.append(&mut self.traces_decommitment.into_ast());
+        // exprs.append(&mut self.traces_witness.into_ast());
+        // exprs.append(&mut self.composition_decommitment.into_ast());
+        // exprs.append(&mut self.composition_witness.into_ast());
+        // exprs.append(&mut self.fri_witness.into_ast());
         exprs
     }
 }
@@ -317,16 +320,16 @@ impl IntoAst for StarkWitness {
 impl IntoAst for TracesDecommitment {
     fn into_ast(self) -> Vec<Expr> {
         let mut exprs = vec![];
-        exprs.append(&mut self.original.into_ast());
-        exprs.append(&mut self.interaction.into_ast());
+        // exprs.append(&mut self.original.into_ast());
+        // exprs.append(&mut self.interaction.into_ast());
         exprs
     }
 }
 
 impl IntoAst for TableDecommitment {
     fn into_ast(self) -> Vec<Expr> {
-        let mut exprs = vec![Expr::Value(format!("{}", self.n_values))];
-        exprs.append(&mut self.values.into_ast());
+        let mut exprs = vec![Expr::Value(format!("{}", self.values.len()))];
+        // exprs.append(&mut self.values.into_ast());
         exprs
     }
 }
@@ -334,8 +337,8 @@ impl IntoAst for TableDecommitment {
 impl IntoAst for TracesWitness {
     fn into_ast(self) -> Vec<Expr> {
         let mut exprs = vec![];
-        exprs.append(&mut self.original.into_ast());
-        exprs.append(&mut self.interaction.into_ast());
+        // exprs.append(&mut self.original.into_ast());
+        // exprs.append(&mut self.interaction.into_ast());
         exprs
     }
 }
@@ -355,7 +358,7 @@ impl IntoAst for TableCommitmentWitnessFlat {
 impl IntoAst for VectorCommitmentWitness {
     fn into_ast(self) -> Vec<Expr> {
         let mut exprs = vec![Expr::Value(format!("{}", self.n_authentications))];
-        exprs.append(&mut self.authentications.into_ast());
+        // exprs.append(&mut self.authentications.into_ast());
         exprs
     }
 }
@@ -363,13 +366,13 @@ impl IntoAst for VectorCommitmentWitness {
 impl IntoAst for VectorCommitmentWitnessFlat {
     fn into_ast(self) -> Vec<Expr> {
         let mut exprs = vec![Expr::Value(format!("{}", self.n_authentications))];
-        exprs.append(
-            &mut self
-                .authentications
-                .iter()
-                .flat_map(IntoAst::into_ast)
-                .collect::<Vec<_>>(),
-        );
+        // exprs.append(
+        //     &mut self
+        //         .authentications
+        //         .iter()
+        //         .flat_map(IntoAst::into_ast)
+        //         .collect::<Vec<_>>(),
+        // );
         exprs
     }
 }
@@ -429,7 +432,7 @@ impl IntoAst for SegmentInfo {
     }
 }
 
-impl IntoAst for PubilcMemoryCell {
+impl IntoAst for PublicMemoryCell {
     fn into_ast(self) -> Vec<Expr> {
         let mut exprs = vec![];
         exprs.append(&mut self.address.into_ast());

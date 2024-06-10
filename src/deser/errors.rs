@@ -11,6 +11,8 @@ pub enum Error {
     NoDataLeft,
     InvalidArrayLen,
     ValueExceededRange,
+    LengthSpecifiedButNotEnoughProvided,
+    MoreLengthsThanVectors,
 }
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -35,6 +37,10 @@ impl Display for Error {
             Error::NoDataLeft => formatter.write_str("unexpected end of input"),
             Error::InvalidArrayLen => formatter.write_str("invalid array length"),
             Error::ValueExceededRange => formatter.write_str("value exceeded range"),
+            Error::LengthSpecifiedButNotEnoughProvided => {
+                formatter.write_str("length specified but not enough provided")
+            }
+            Error::MoreLengthsThanVectors => formatter.write_str("more lengths than vectors"),
         }
     }
 }

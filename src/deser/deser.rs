@@ -8,6 +8,7 @@ use super::errors::{Error, Result};
 
 pub struct Deserializer<'de> {
     input: &'de [FieldElement],
+    lengths: Option<Vec<Option<usize>>>, // Workaround around serde limit to 32 element tuples.
 }
 
 impl<'de> Deserializer<'de> {
@@ -26,7 +27,31 @@ impl<'de> Deserializer<'de> {
     }
 
     pub fn from_felts(input: &'de Vec<FieldElement>) -> Self {
-        Deserializer { input }
+        Deserializer {
+            input,
+            lengths: None,
+        }
+    }
+
+    pub fn from_felts_with_lengths(
+        input: &'de Vec<FieldElement>,
+        lengths: Vec<Option<usize>>,
+    ) -> Self {
+        Deserializer {
+            input,
+            lengths: Some(lengths),
+        }
+    }
+
+    fn get_length(&mut self) -> Result<Option<usize>> {
+        if let Some(ref mut lengths) = self.lengths {
+            if lengths.is_empty() {
+                return Err(Error::LengthSpecifiedButNotEnoughProvided);
+            }
+            Ok(lengths.remove(0))
+        } else {
+            Ok(None)
+        }
     }
 }
 
@@ -43,8 +68,40 @@ pub fn from_felts<'a, T>(s: &'a Vec<FieldElement>) -> Result<T>
 where
     T: Deserialize<'a>,
 {
-    let mut deserializer = Deserializer::from_felts(s);
+    from_felts_inner(s, None)
+}
+
+pub fn from_felts_with_lengths<'a, T>(
+    s: &'a Vec<FieldElement>,
+    lengths: Vec<Option<usize>>,
+) -> Result<T>
+where
+    T: Deserialize<'a>,
+{
+    from_felts_inner(s, Some(lengths))
+}
+
+pub fn from_felts_inner<'a, T>(
+    s: &'a Vec<FieldElement>,
+    lengths: Option<Vec<Option<usize>>>,
+) -> Result<T>
+where
+    T: Deserialize<'a>,
+{
+    let mut deserializer = if let Some(lengths) = lengths {
+        Deserializer::from_felts_with_lengths(s, lengths)
+    } else {
+        Deserializer::from_felts(s)
+    };
+
     let t = T::deserialize(&mut deserializer)?;
+
+    if let Some(lengths) = deserializer.lengths {
+        if !lengths.is_empty() {
+            return Err(Error::LengthSpecifiedButNotEnoughProvided);
+        }
+    }
+
     if deserializer.input.is_empty() {
         Ok(t)
     } else {
@@ -218,7 +275,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        visitor.visit_seq(DeserSeq::new(self))
+        visitor.visit_seq(DeserSeq::new(self)?)
     }
 
     fn deserialize_tuple<V>(self, len: usize, visitor: V) -> Result<V::Value>
@@ -343,8 +400,10 @@ struct DeserSeq<'a, 'de: 'a> {
 }
 
 impl<'a, 'de> DeserSeq<'a, 'de> {
-    fn new(de: &'a mut Deserializer<'de>) -> Self {
-        DeserSeq { de, left: None }
+    fn new(de: &'a mut Deserializer<'de>) -> Result<Self> {
+        let len = de.get_length()?;
+
+        Ok(DeserSeq { de, left: len })
     }
 
     fn new_with_len(de: &'a mut Deserializer<'de>, len: usize) -> Self {

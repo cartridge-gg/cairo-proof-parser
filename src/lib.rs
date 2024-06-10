@@ -22,7 +22,7 @@ pub struct ParseStarkProof {
     pub config: Exprs,
     pub public_input: Exprs,
     pub unsent_commitment: Exprs,
-    pub witness: Exprs,
+    // pub witness: Exprs,
 }
 impl Into<Vec<FieldElement>> for ParseStarkProof {
     fn into(self) -> Vec<FieldElement> {
@@ -30,7 +30,7 @@ impl Into<Vec<FieldElement>> for ParseStarkProof {
             <Exprs as Into<Vec<FieldElement>>>::into(self.config),
             <Exprs as Into<Vec<FieldElement>>>::into(self.public_input),
             <Exprs as Into<Vec<FieldElement>>>::into(self.unsent_commitment),
-            <Exprs as Into<Vec<FieldElement>>>::into(self.witness),
+            // <Exprs as Into<Vec<FieldElement>>>::into(self.witness),
         ]
         .collect()
     }
@@ -42,7 +42,7 @@ impl Display for ParseStarkProof {
             self.config.iter(),
             self.public_input.iter(),
             self.unsent_commitment.iter(),
-            self.witness.iter()
+            // self.witness.iter()
         ];
 
         for (i, expr) in result.enumerate() {
@@ -63,7 +63,7 @@ pub fn parse(input: &str) -> anyhow::Result<ParseStarkProof> {
         config: Exprs::from(stark_proof.config),
         public_input: Exprs::from(stark_proof.public_input),
         unsent_commitment: Exprs::from(stark_proof.unsent_commitment),
-        witness: Exprs::from(stark_proof.witness),
+        // witness: Exprs::from(stark_proof.witness),
     })
 }
 
