@@ -13,6 +13,7 @@ pub enum Error {
     ValueExceededRange,
     LengthSpecifiedButNotEnoughProvided,
     MoreLengthsThanVectors,
+    LengthSetButNotConsumed,
 }
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -41,6 +42,7 @@ impl Display for Error {
                 formatter.write_str("length specified but not enough provided")
             }
             Error::MoreLengthsThanVectors => formatter.write_str("more lengths than vectors"),
+            Error::LengthSetButNotConsumed => formatter.write_str("length set but not consumed"),
         }
     }
 }

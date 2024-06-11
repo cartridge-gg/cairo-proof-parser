@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::ops::{AddAssign, MulAssign};
 
 use serde::de::{self, DeserializeSeed, IntoDeserializer, MapAccess, SeqAccess, Visitor};
@@ -6,9 +7,12 @@ use starknet_crypto::FieldElement;
 
 use super::errors::{Error, Result};
 
+pub type Lengths = HashMap<String, Vec<usize>>;
+
 pub struct Deserializer<'de> {
     input: &'de [FieldElement],
-    lengths: Option<Vec<Option<usize>>>, // Workaround around serde limit to 32 element tuples.
+    lengths: Option<Lengths>, // Workaround around serde limit to 32 element tuples.
+    next_length: Option<usize>,
 }
 
 impl<'de> Deserializer<'de> {
@@ -30,28 +34,40 @@ impl<'de> Deserializer<'de> {
         Deserializer {
             input,
             lengths: None,
+            next_length: None,
         }
     }
 
-    pub fn from_felts_with_lengths(
-        input: &'de Vec<FieldElement>,
-        lengths: Vec<Option<usize>>,
-    ) -> Self {
+    pub fn from_felts_with_lengths(input: &'de Vec<FieldElement>, lengths: Lengths) -> Self {
         Deserializer {
             input,
             lengths: Some(lengths),
+            next_length: None,
         }
     }
 
-    fn get_length(&mut self) -> Result<Option<usize>> {
+    fn get_length(&mut self) -> Option<usize> {
+        let length = self.next_length;
+        self.next_length = None;
+        length
+    }
+
+    fn apply_override(&mut self, name: &str) -> Result<()> {
         if let Some(ref mut lengths) = self.lengths {
-            if lengths.is_empty() {
-                return Err(Error::LengthSpecifiedButNotEnoughProvided);
+            if let Some(length) = lengths.get_mut(name) {
+                if length.is_empty() {
+                    return Err(Error::MoreLengthsThanVectors);
+                }
+
+                if self.next_length.is_some() {
+                    return Err(Error::LengthSetButNotConsumed);
+                }
+
+                self.next_length = Some(length.remove(0));
             }
-            Ok(lengths.remove(0))
-        } else {
-            Ok(None)
         }
+
+        Ok(())
     }
 }
 
@@ -71,20 +87,14 @@ where
     from_felts_inner(s, None)
 }
 
-pub fn from_felts_with_lengths<'a, T>(
-    s: &'a Vec<FieldElement>,
-    lengths: Vec<Option<usize>>,
-) -> Result<T>
+pub fn from_felts_with_lengths<'a, T>(s: &'a Vec<FieldElement>, lengths: Lengths) -> Result<T>
 where
     T: Deserialize<'a>,
 {
     from_felts_inner(s, Some(lengths))
 }
 
-pub fn from_felts_inner<'a, T>(
-    s: &'a Vec<FieldElement>,
-    lengths: Option<Vec<Option<usize>>>,
-) -> Result<T>
+fn from_felts_inner<'a, T>(s: &'a Vec<FieldElement>, lengths: Option<Lengths>) -> Result<T>
 where
     T: Deserialize<'a>,
 {
@@ -97,8 +107,13 @@ where
     let t = T::deserialize(&mut deserializer)?;
 
     if let Some(lengths) = deserializer.lengths {
-        if !lengths.is_empty() {
-            return Err(Error::LengthSpecifiedButNotEnoughProvided);
+        let non_empty = lengths
+            .into_iter()
+            .filter(|(_, lengths)| !lengths.is_empty())
+            .count();
+
+        if non_empty > 0 {
+            // return Err(Error::LengthSpecifiedButNotEnoughProvided);
         }
     }
 
@@ -381,12 +396,12 @@ impl<'a, 'de> MapAccess<'de> for DeserStruct<'a, 'de> {
     where
         K: serde::de::DeserializeSeed<'de>,
     {
-        if self.index < self.fields.len() {
-            seed.deserialize(self.fields[self.index].into_deserializer())
-                .map(Some)
-        } else {
-            Ok(None)
+        if self.index == self.fields.len() {
+            return Ok(None);
         }
+        let key = self.fields[self.index];
+        self.de.apply_override(&key)?;
+        seed.deserialize(key.into_deserializer()).map(Some)
     }
 
     fn next_value_seed<V>(&mut self, seed: V) -> Result<V::Value>
@@ -407,13 +422,12 @@ struct DeserSeq<'a, 'de: 'a> {
 
 impl<'a, 'de> DeserSeq<'a, 'de> {
     fn new(de: &'a mut Deserializer<'de>) -> Result<Self> {
-        let len = de.get_length()?;
+        let len = de.get_length();
 
         Ok(DeserSeq { de, left: len })
     }
 
     fn new_with_len(de: &'a mut Deserializer<'de>, len: usize) -> Self {
-        println!("len: {}", len);
         DeserSeq {
             de,
             left: Some(len),
@@ -512,6 +526,23 @@ mod tests {
     fn test_deser_seq() -> Result<()> {
         let de: WithSequence =
             from_felts(&vec![2u64.into(), 11u64.into(), 12u64.into(), 2u64.into()])?;
+        let expected = WithSequence {
+            a: vec![11u64.into(), 12u64.into()],
+            b: 2u64.into(),
+        };
+
+        assert_eq!(de, expected);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_deser_seq_with_len() -> Result<()> {
+        let len_override = ("a".to_string(), vec![2]);
+        let de: WithSequence = from_felts_with_lengths(
+            &vec![11u64.into(), 12u64.into(), 2u64.into()],
+            vec![len_override].into_iter().collect(),
+        )?;
         let expected = WithSequence {
             a: vec![11u64.into(), 12u64.into()],
             b: 2u64.into(),

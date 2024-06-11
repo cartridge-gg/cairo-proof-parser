@@ -11,7 +11,7 @@ pub struct StarkProof {
     pub config: StarkConfig,
     pub public_input: CairoPublicInput,
     pub unsent_commitment: StarkUnsentCommitment,
-    // pub witness: StarkWitness,
+    pub witness: StarkWitness,
 }
 #[derive(Debug, Clone, PartialEq)]
 pub struct StarkConfig {
@@ -81,16 +81,18 @@ pub struct ProofOfWorkUnsentCommitment {
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct StarkWitness {
     // pub traces_decommitment: TracesDecommitment,
+    pub not_traces_decommitment: Vec<FieldElement>,
     pub traces_witness: TracesWitness,
     // pub composition_decommitment: Vec<FieldElement>,
-    pub skip: Vec<FieldElement>,
-    pub composition_witness: TableCommitmentWitness,
-    pub fri_witness: FriWitness,
+    pub not_composition_decommitment: Vec<FieldElement>,
+    pub composition_witness: Vec<FieldElement>,
+    pub fri_witness: Vec<FriLayerWitness>,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct TracesDecommitment {
-    pub original: Vec<FieldElement>,
+    // pub original: Vec<FieldElement>,
+    pub not_original: Vec<FieldElement>,
     pub interaction: Vec<FieldElement>,
 }
 
@@ -102,9 +104,9 @@ pub struct TableDecommitment {
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct TracesWitness {
-    pub original: Vec<FieldElement>,
-    pub skip: Vec<FieldElement>,
-    pub interaction: Vec<FieldElement>,
+    pub original_traces_witness: Vec<FieldElement>,
+    pub skip_traces_witness: Vec<FieldElement>,
+    pub interaction_traces_witness: Vec<FieldElement>,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -136,7 +138,6 @@ pub struct FriWitness {
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct FriLayerWitness {
-    // pub n_leaves: usize,
     // pub leaves: Vec<FieldElement>,
     pub not_leaves: Vec<FieldElement>,
     pub table_witness: Vec<FieldElement>,

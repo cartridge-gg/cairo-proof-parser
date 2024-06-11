@@ -12,15 +12,13 @@ use starknet_crypto::FieldElement;
 use crate::{
     annotations::{extract::FromStrHex, Annotations},
     builtins::Builtin,
-    deser::deser::{from_felts, from_felts_with_lengths, Deserializer},
+    deser::deser::from_felts_with_lengths,
     layout::Layout,
     stark_proof::{
-        CairoPublicInput, FriConfig, FriLayerWitness, FriUnsentCommitment, FriWitness,
-        ProofOfWorkConfig, ProofOfWorkUnsentCommitment, PublicMemoryCell, SegmentInfo, StarkConfig,
-        StarkProof, StarkUnsentCommitment, StarkWitness, TableCommitmentConfig,
-        TableCommitmentWitness, TableCommitmentWitnessFlat, TableDecommitment, TracesConfig,
-        TracesDecommitment, TracesUnsentCommitment, TracesWitness, VectorCommitmentConfig,
-        VectorCommitmentWitness, VectorCommitmentWitnessFlat,
+        CairoPublicInput, FriConfig, FriLayerWitness, FriUnsentCommitment, ProofOfWorkConfig,
+        ProofOfWorkUnsentCommitment, PublicMemoryCell, SegmentInfo, StarkConfig, StarkProof,
+        StarkUnsentCommitment, StarkWitness, TableCommitmentConfig, TracesConfig,
+        TracesUnsentCommitment, TracesWitness, VectorCommitmentConfig,
     },
     utils::log2_if_power_of_2,
 };
@@ -277,32 +275,32 @@ impl ProofJSON {
     fn stark_witness(annotations: &Annotations) -> StarkWitness {
         StarkWitness {
             // traces_decommitment: TracesDecommitment {
-            //     original_len: annotations.original_witness_leaves.len() as u32,
-            //     original: bigints_to_fe(&annotations.original_witness_leaves),
+            //     // original: bigints_to_fe(&annotations.original_witness_leaves),
+            //     not_original: vec![],
             //     interaction: bigints_to_fe(&annotations.interaction_witness_leaves),
             // },
+            not_traces_decommitment: vec![],
             traces_witness: TracesWitness {
-                original: bigints_to_fe(&annotations.original_witness_authentications),
-                skip: vec![],
-                interaction: bigints_to_fe(&annotations.interaction_witness_authentications),
+                original_traces_witness: bigints_to_fe(
+                    &annotations.original_witness_authentications,
+                ),
+                skip_traces_witness: vec![],
+                interaction_traces_witness: bigints_to_fe(
+                    &annotations.interaction_witness_authentications,
+                ),
             },
             // composition_decommitment: bigints_to_fe(&annotations.composition_witness_leaves),
-            skip: vec![],
-            composition_witness: TableCommitmentWitness {
-                vector: bigints_to_fe(&annotations.composition_witness_authentications),
-            },
-            fri_witness: FriWitness {
-                layers: annotations
-                    .fri_witnesses
-                    .iter()
-                    .map(|w| FriLayerWitness {
-                        // n_leaves: w.leaves.len(),
-                        // leaves: bigints_to_fe(&w.leaves),
-                        not_leaves: vec![],
-                        table_witness: bigints_to_fe(&w.authentications),
-                    })
-                    .collect(),
-            },
+            not_composition_decommitment: vec![],
+            composition_witness: bigints_to_fe(&annotations.composition_witness_authentications),
+            fri_witness: annotations
+                .fri_witnesses
+                .iter()
+                .map(|w| FriLayerWitness {
+                    // leaves: bigints_to_fe(&w.leaves),
+                    not_leaves: vec![],
+                    table_witness: bigints_to_fe(&w.authentications),
+                })
+                .collect(),
         }
     }
 }
@@ -342,65 +340,54 @@ impl TryFrom<ProofJSON> for StarkProof {
             // annotations.z.clone(),
             // annotations.alpha.clone(),
         )?;
-        let unsent_commitment = value.stark_unsent_commitment(&annotations);
-        dbg!(unsent_commitment.oods_values.len());
-        dbg!(unsent_commitment.fri.inner_layers.len());
-        dbg!(unsent_commitment.fri.last_layer_coefficients.len());
+        let unsent_commitment_from_annotations = value.stark_unsent_commitment(&annotations);
+        let witness_from_annotations = ProofJSON::stark_witness(&annotations);
 
-        let witness = ProofJSON::stark_witness(&annotations);
-        dbg!(witness.traces_witness.original.len());
-        dbg!(witness.traces_witness.interaction.len());
-        dbg!(witness.composition_witness.vector.len());
-        dbg!(witness.fri_witness.layers.len());
+        let proof_from_annotations = StarkProof {
+            config: config.clone(),
+            public_input: public_input.clone(),
+            unsent_commitment: unsent_commitment_from_annotations,
+            witness: witness_from_annotations,
+        };
 
-        // dbg!(witness.fri_witness.layers[0].leaves.len());
-        // dbg!(witness.fri_witness.layers[1].leaves.len());
-        // dbg!(witness.fri_witness.layers[2].leaves.len());
-
-        dbg!(witness.fri_witness.layers[0].table_witness.len());
-        dbg!(witness.fri_witness.layers[1].table_witness.len());
-        dbg!(witness.fri_witness.layers[2].table_witness.len());
-
-        let deser: (StarkUnsentCommitment, Vec<FieldElement>, StarkWitness) =
+        let (unsent_commitment, mut witness): (StarkUnsentCommitment, StarkWitness) =
             from_felts_with_lengths(
                 &hex.0,
                 vec![
-                    Some(135),
-                    Some(3),
-                    Some(128),
-                    Some(112), // skipped
-                    Some(257),
-                    Some(48), // skip
-                    Some(257),
-                    Some(32), // skip witness
-                    Some(257),
-                    Some(3), // layers
-                    Some(240),
-                    Some(193),
-                    Some(240),
-                    Some(129),
-                    Some(112),
-                    Some(81),
-                ],
+                    ("oods_values", vec![135]),
+                    ("inner_layers", vec![3]),
+                    ("last_layer_coefficients", vec![128]),
+                    ("not_traces_decommitment", vec![112]), // skipped
+                    ("original_traces_witness", vec![257]),
+                    ("skip_traces_witness", vec![48]),
+                    ("interaction_traces_witness", vec![257]),
+                    ("not_composition_decommitment", vec![32]),
+                    ("composition_witness", vec![257]),
+                    ("fri_witness", vec![3]), // layers
+                    ("not_leaves", vec![240, 240, 112]),
+                    ("table_witness", vec![193, 129, 81]),
+                ]
+                .into_iter()
+                .map(|(k, v)| (k.to_string(), v))
+                .collect(),
             )?;
 
-        let mut deser_witness = deser.2;
-        deser_witness.traces_witness.skip = vec![];
-        deser_witness.skip = vec![];
-        deser_witness.fri_witness.layers[0].not_leaves = vec![];
-        deser_witness.fri_witness.layers[1].not_leaves = vec![];
-        deser_witness.fri_witness.layers[2].not_leaves = vec![];
+        witness.not_traces_decommitment = vec![];
+        witness.traces_witness.skip_traces_witness = vec![];
+        witness.not_composition_decommitment = vec![];
+        witness.fri_witness[0].not_leaves = vec![];
+        witness.fri_witness[1].not_leaves = vec![];
+        witness.fri_witness[2].not_leaves = vec![];
 
-        // dbg!(deser_witness.fri_witness.layers[0].leaves.len());
-
-        assert_eq!(deser.0, unsent_commitment);
-        assert_eq!(deser_witness, witness);
-
-        Ok(StarkProof {
+        let proof = StarkProof {
             config,
             public_input,
             unsent_commitment,
-            // witness,
-        })
+            witness,
+        };
+
+        assert_eq!(proof_from_annotations, proof);
+
+        Ok(proof)
     }
 }
