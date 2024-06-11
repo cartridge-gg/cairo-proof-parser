@@ -169,11 +169,17 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
         unimplemented!()
     }
 
-    fn deserialize_u32<V>(self, _visitor: V) -> Result<V::Value>
+    fn deserialize_u32<V>(self, visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
-        unimplemented!()
+        let value = self
+            .take()?
+            .to_string()
+            .parse::<u32>()
+            .map_err(|_| Error::ValueExceededRange)?;
+
+        visitor.visit_u32(value)
     }
 
     fn deserialize_u64<V>(self, visitor: V) -> Result<V::Value>

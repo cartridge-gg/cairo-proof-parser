@@ -82,9 +82,10 @@ pub struct ProofOfWorkUnsentCommitment {
 pub struct StarkWitness {
     // pub traces_decommitment: TracesDecommitment,
     pub traces_witness: TracesWitness,
-    // pub composition_decommitment: TableDecommitment,
-    // pub composition_witness: TableCommitmentWitness,
-    // pub fri_witness: FriWitness,
+    // pub composition_decommitment: Vec<FieldElement>,
+    pub skip: Vec<FieldElement>,
+    pub composition_witness: TableCommitmentWitness,
+    pub fri_witness: FriWitness,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -108,7 +109,7 @@ pub struct TracesWitness {
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct TableCommitmentWitness {
-    pub vector: VectorCommitmentWitness,
+    pub vector: Vec<FieldElement>,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -117,9 +118,9 @@ pub struct VectorCommitmentWitness {
     pub authentications: Vec<FieldElement>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct TableCommitmentWitnessFlat {
-    pub vector: VectorCommitmentWitnessFlat,
+    pub vector: Vec<FieldElement>,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -128,16 +129,17 @@ pub struct VectorCommitmentWitnessFlat {
     pub authentications: Vec<FieldElement>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct FriWitness {
     pub layers: Vec<FriLayerWitness>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct FriLayerWitness {
-    pub n_leaves: usize,
-    pub leaves: Vec<BigUint>,
-    pub table_witness: TableCommitmentWitnessFlat,
+    // pub n_leaves: usize,
+    // pub leaves: Vec<FieldElement>,
+    pub not_leaves: Vec<FieldElement>,
+    pub table_witness: Vec<FieldElement>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -343,17 +345,17 @@ impl IntoAst for TracesWitness {
     }
 }
 
-impl IntoAst for TableCommitmentWitness {
-    fn into_ast(self) -> Vec<Expr> {
-        self.vector.into_ast()
-    }
-}
+// impl IntoAst for TableCommitmentWitness {
+//     fn into_ast(self) -> Vec<Expr> {
+//         // self.vector.into_ast()
+//     }
+// }
 
-impl IntoAst for TableCommitmentWitnessFlat {
-    fn into_ast(self) -> Vec<Expr> {
-        self.vector.into_ast()
-    }
-}
+// impl IntoAst for TableCommitmentWitnessFlat {
+//     fn into_ast(self) -> Vec<Expr> {
+//         self.vector.into_ast()
+//     }
+// }
 
 impl IntoAst for VectorCommitmentWitness {
     fn into_ast(self) -> Vec<Expr> {
@@ -385,15 +387,17 @@ impl IntoAst for FriWitness {
 
 impl IntoAst for FriLayerWitness {
     fn into_ast(self) -> Vec<Expr> {
-        let mut exprs = vec![Expr::Value(format!("{}", self.n_leaves))];
-        exprs.append(
-            &mut self
-                .leaves
-                .iter()
-                .flat_map(IntoAst::into_ast)
-                .collect::<Vec<_>>(),
-        );
-        exprs.append(&mut self.table_witness.into_ast());
+        let mut exprs = vec![
+        // Expr::Value(format!("{}", self.n_leaves))
+        ];
+        // exprs.append(
+        //     &mut self
+        //         .leaves
+        //         .iter()
+        //         .flat_map(IntoAst::into_ast)
+        //         .collect::<Vec<_>>(),
+        // );
+        // exprs.append(&mut self.table_witness.into_ast());
         exprs
     }
 }

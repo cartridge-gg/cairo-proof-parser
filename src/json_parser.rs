@@ -286,32 +286,23 @@ impl ProofJSON {
                 skip: vec![],
                 interaction: bigints_to_fe(&annotations.interaction_witness_authentications),
             },
-            // composition_decommitment: TableDecommitment {
-            //     n_values: annotations.composition_witness_leaves.len(),
-            //     values: annotations.composition_witness_leaves.clone(),
-            // },
-            // composition_witness: TableCommitmentWitness {
-            //     vector: VectorCommitmentWitness {
-            //         n_authentications: annotations.composition_witness_authentications.len(),
-            //         authentications: annotations.composition_witness_authentications.clone(),
-            //     },
-            // },
-            // fri_witness: FriWitness {
-            //     layers: annotations
-            //         .fri_witnesses
-            //         .iter()
-            //         .map(|w| FriLayerWitness {
-            //             n_leaves: w.leaves.len(),
-            //             leaves: w.leaves.clone(),
-            //             table_witness: TableCommitmentWitnessFlat {
-            //                 vector: VectorCommitmentWitnessFlat {
-            //                     n_authentications: w.authentications.len(),
-            //                     authentications: w.authentications.clone(),
-            //                 },
-            //             },
-            //         })
-            //         .collect(),
-            // },
+            // composition_decommitment: bigints_to_fe(&annotations.composition_witness_leaves),
+            skip: vec![],
+            composition_witness: TableCommitmentWitness {
+                vector: bigints_to_fe(&annotations.composition_witness_authentications),
+            },
+            fri_witness: FriWitness {
+                layers: annotations
+                    .fri_witnesses
+                    .iter()
+                    .map(|w| FriLayerWitness {
+                        // n_leaves: w.leaves.len(),
+                        // leaves: bigints_to_fe(&w.leaves),
+                        not_leaves: vec![],
+                        table_witness: bigints_to_fe(&w.authentications),
+                    })
+                    .collect(),
+            },
         }
     }
 }
@@ -359,6 +350,16 @@ impl TryFrom<ProofJSON> for StarkProof {
         let witness = ProofJSON::stark_witness(&annotations);
         dbg!(witness.traces_witness.original.len());
         dbg!(witness.traces_witness.interaction.len());
+        dbg!(witness.composition_witness.vector.len());
+        dbg!(witness.fri_witness.layers.len());
+
+        // dbg!(witness.fri_witness.layers[0].leaves.len());
+        // dbg!(witness.fri_witness.layers[1].leaves.len());
+        // dbg!(witness.fri_witness.layers[2].leaves.len());
+
+        dbg!(witness.fri_witness.layers[0].table_witness.len());
+        dbg!(witness.fri_witness.layers[1].table_witness.len());
+        dbg!(witness.fri_witness.layers[2].table_witness.len());
 
         let deser: (StarkUnsentCommitment, Vec<FieldElement>, StarkWitness) =
             from_felts_with_lengths(
@@ -371,11 +372,26 @@ impl TryFrom<ProofJSON> for StarkProof {
                     Some(257),
                     Some(48), // skip
                     Some(257),
+                    Some(32), // skip witness
+                    Some(257),
+                    Some(3), // layers
+                    Some(240),
+                    Some(193),
+                    Some(240),
+                    Some(129),
+                    Some(112),
+                    Some(81),
                 ],
             )?;
 
         let mut deser_witness = deser.2;
         deser_witness.traces_witness.skip = vec![];
+        deser_witness.skip = vec![];
+        deser_witness.fri_witness.layers[0].not_leaves = vec![];
+        deser_witness.fri_witness.layers[1].not_leaves = vec![];
+        deser_witness.fri_witness.layers[2].not_leaves = vec![];
+
+        // dbg!(deser_witness.fri_witness.layers[0].leaves.len());
 
         assert_eq!(deser.0, unsent_commitment);
         assert_eq!(deser_witness, witness);
