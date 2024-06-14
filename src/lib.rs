@@ -5,7 +5,7 @@ use crate::{json_parser::ProofJSON, stark_proof::StarkProof};
 mod annotations;
 mod ast;
 mod builtins;
-mod deser;
+pub mod deser;
 pub mod json_parser;
 mod layout;
 pub mod output;

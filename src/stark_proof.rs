@@ -4,7 +4,10 @@ use num_bigint::BigUint;
 use serde::Deserialize;
 use starknet_crypto::FieldElement;
 
-use crate::ast::{Expr, Exprs};
+use crate::{
+    ast::{Expr, Exprs},
+    deser::montgomery::deserialize_montgomery_vec,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct StarkProof {
@@ -80,20 +83,24 @@ pub struct ProofOfWorkUnsentCommitment {
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct StarkWitness {
-    // pub traces_decommitment: TracesDecommitment,
-    pub not_traces_decommitment: Vec<FieldElement>,
-    pub traces_witness: TracesWitness,
-    // pub composition_decommitment: Vec<FieldElement>,
-    pub not_composition_decommitment: Vec<FieldElement>,
+    #[serde(deserialize_with = "deserialize_montgomery_vec")]
+    pub original_traces_decommitment: Vec<FieldElement>,
+    pub original_traces_witness: Vec<FieldElement>,
+    #[serde(deserialize_with = "deserialize_montgomery_vec")]
+    pub traces_decommitment_interaction: Vec<FieldElement>,
+    pub interaction_traces_witness: Vec<FieldElement>,
+    #[serde(deserialize_with = "deserialize_montgomery_vec")]
+    pub composition_decommitment: Vec<FieldElement>,
     pub composition_witness: Vec<FieldElement>,
     pub fri_witness: Vec<FriLayerWitness>,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct TracesDecommitment {
-    // pub original: Vec<FieldElement>,
-    pub not_original: Vec<FieldElement>,
-    pub interaction: Vec<FieldElement>,
+    // #[serde(deserialize_with = "deserialize_montgomery_vec")]
+    // pub original_traces_decommitment: Vec<FieldElement>,
+    // #[serde(deserialize_with = "deserialize_montgomery_vec")]
+    // pub traces_decommitment_interaction: Vec<FieldElement>,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -105,6 +112,7 @@ pub struct TableDecommitment {
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct TracesWitness {
     pub original_traces_witness: Vec<FieldElement>,
+    #[serde(deserialize_with = "deserialize_montgomery_vec")]
     pub skip_traces_witness: Vec<FieldElement>,
     pub interaction_traces_witness: Vec<FieldElement>,
 }
@@ -138,8 +146,9 @@ pub struct FriWitness {
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct FriLayerWitness {
-    // pub leaves: Vec<FieldElement>,
-    pub not_leaves: Vec<FieldElement>,
+    #[serde(deserialize_with = "deserialize_montgomery_vec")]
+    pub leaves: Vec<FieldElement>,
+    // pub not_leaves: Vec<FieldElement>,
     pub table_witness: Vec<FieldElement>,
 }
 
