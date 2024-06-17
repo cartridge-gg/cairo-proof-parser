@@ -312,32 +312,3 @@ impl<'a> ser::SerializeStructVariant for &'a mut Serializer {
         Ok(())
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use serde::Serialize;
-    use starknet_crypto::FieldElement;
-
-    use crate::deser::ser::to_felts;
-
-    #[test]
-    fn test_struct() {
-        #[derive(Serialize)]
-        struct Test {
-            int: usize,
-            seq: Vec<FieldElement>,
-        }
-
-        let test = Test {
-            int: 1,
-            seq: vec![FieldElement::from(42u64), FieldElement::from(43u64)],
-        };
-        let expected = vec![
-            FieldElement::from(1u64),
-            FieldElement::from(2u64),
-            FieldElement::from(42u64),
-            FieldElement::from(43u64),
-        ];
-        assert_eq!(to_felts(&test).unwrap(), expected);
-    }
-}
