@@ -14,6 +14,8 @@ pub enum Error {
     LengthSpecifiedButNotEnoughProvided,
     MoreLengthsThanVectors,
     LengthSetButNotConsumed,
+    LengthNotKnownAtSerialization,
+    UnparsableString,
 }
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -43,6 +45,10 @@ impl Display for Error {
             }
             Error::MoreLengthsThanVectors => formatter.write_str("more lengths than vectors"),
             Error::LengthSetButNotConsumed => formatter.write_str("length set but not consumed"),
+            Error::LengthNotKnownAtSerialization => {
+                formatter.write_str("length not known at serialization")
+            }
+            Error::UnparsableString => formatter.write_str("non-parsable strings not supported"),
         }
     }
 }

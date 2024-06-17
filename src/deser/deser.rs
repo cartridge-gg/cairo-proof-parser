@@ -5,7 +5,7 @@ use serde::de::{self, DeserializeSeed, IntoDeserializer, MapAccess, SeqAccess, V
 use serde::Deserialize;
 use starknet_crypto::FieldElement;
 
-use super::errors::{Error, Result};
+use super::error::{Error, Result};
 
 pub type Lengths = HashMap<String, Vec<usize>>;
 

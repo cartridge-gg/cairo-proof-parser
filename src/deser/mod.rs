@@ -1,3 +1,4 @@
 pub mod deser;
-pub mod errors;
+pub mod error;
 pub mod montgomery;
+pub mod ser;
