@@ -7,6 +7,11 @@ pub struct Serializer {
     output: Vec<FieldElement>,
 }
 
+pub struct SeqSerializer<'a> {
+    se: &'a mut Serializer,
+    len_index: usize,
+}
+
 pub fn to_felts<T>(value: &T) -> Result<Vec<FieldElement>>
 where
     T: Serialize,
@@ -20,11 +25,11 @@ impl<'a> ser::Serializer for &'a mut Serializer {
     type Ok = ();
     type Error = Error;
 
-    type SerializeSeq = Self;
+    type SerializeSeq = SeqSerializer<'a>;
     type SerializeTuple = Self;
-    type SerializeTupleStruct = Self;
+    type SerializeTupleStruct = SeqSerializer<'a>;
     type SerializeTupleVariant = Self;
-    type SerializeMap = Self;
+    type SerializeMap = SeqSerializer<'a>;
     type SerializeStruct = Self;
     type SerializeStructVariant = Self;
 
@@ -50,16 +55,16 @@ impl<'a> ser::Serializer for &'a mut Serializer {
         unimplemented!()
     }
 
-    fn serialize_u8(self, _v: u8) -> Result<()> {
-        unimplemented!()
+    fn serialize_u8(self, v: u8) -> Result<()> {
+        self.serialize_u64(v.into())
     }
 
-    fn serialize_u16(self, _v: u16) -> Result<()> {
-        unimplemented!()
+    fn serialize_u16(self, v: u16) -> Result<()> {
+        self.serialize_u64(v.into())
     }
 
-    fn serialize_u32(self, _v: u32) -> Result<()> {
-        unimplemented!()
+    fn serialize_u32(self, v: u32) -> Result<()> {
+        self.serialize_u64(v.into())
     }
 
     fn serialize_u64(self, v: u64) -> Result<()> {
@@ -146,8 +151,13 @@ impl<'a> ser::Serializer for &'a mut Serializer {
 
     fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq> {
         let len = len.ok_or(Error::LengthNotKnownAtSerialization)?;
-        self.output.push(FieldElement::from(len));
-        Ok(self)
+        let len_index = self.output.len();
+        self.output.push(FieldElement::from(len)); // This is later overwritten with the actual length
+
+        Ok(SeqSerializer {
+            se: self,
+            len_index,
+        })
     }
 
     fn serialize_tuple(self, _len: usize) -> Result<Self::SerializeTuple> {
@@ -193,7 +203,7 @@ impl<'a> ser::Serializer for &'a mut Serializer {
     }
 }
 
-impl<'a> ser::SerializeSeq for &'a mut Serializer {
+impl<'a> ser::SerializeSeq for SeqSerializer<'a> {
     type Ok = ();
     type Error = Error;
 
@@ -201,10 +211,12 @@ impl<'a> ser::SerializeSeq for &'a mut Serializer {
     where
         T: ?Sized + Serialize,
     {
-        value.serialize(&mut **self)
+        value.serialize(&mut *self.se)
     }
 
     fn end(self) -> Result<()> {
+        self.se.output[self.len_index] =
+            FieldElement::from(self.se.output.len() - self.len_index - 1);
         Ok(())
     }
 }
@@ -225,7 +237,7 @@ impl<'a> ser::SerializeTuple for &'a mut Serializer {
     }
 }
 
-impl<'a> ser::SerializeTupleStruct for &'a mut Serializer {
+impl<'a> ser::SerializeTupleStruct for SeqSerializer<'a> {
     type Ok = ();
     type Error = Error;
 
@@ -233,7 +245,7 @@ impl<'a> ser::SerializeTupleStruct for &'a mut Serializer {
     where
         T: ?Sized + Serialize,
     {
-        value.serialize(&mut **self)
+        value.serialize(&mut *self.se)
     }
 
     fn end(self) -> Result<()> {
@@ -257,7 +269,7 @@ impl<'a> ser::SerializeTupleVariant for &'a mut Serializer {
     }
 }
 
-impl<'a> ser::SerializeMap for &'a mut Serializer {
+impl<'a> ser::SerializeMap for SeqSerializer<'a> {
     type Ok = ();
     type Error = Error;
 
@@ -265,14 +277,14 @@ impl<'a> ser::SerializeMap for &'a mut Serializer {
     where
         T: ?Sized + Serialize,
     {
-        key.serialize(&mut **self)
+        key.serialize(&mut *self.se)
     }
 
     fn serialize_value<T>(&mut self, value: &T) -> Result<()>
     where
         T: ?Sized + Serialize,
     {
-        value.serialize(&mut **self)
+        value.serialize(&mut *self.se)
     }
 
     fn end(self) -> Result<()> {

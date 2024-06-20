@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::ops::{AddAssign, MulAssign};
 
 use serde::de::{self, DeserializeSeed, IntoDeserializer, MapAccess, SeqAccess, Visitor};
 use serde::Deserialize;
@@ -68,15 +67,6 @@ impl<'de> Deserializer<'de> {
         }
 
         Ok(())
-    }
-}
-
-impl<'de> Deserializer<'de> {
-    fn parse_unsigned<T>(&mut self) -> Result<T>
-    where
-        T: AddAssign<T> + MulAssign<T> + From<u8>,
-    {
-        todo!("parse_unsigned")
     }
 }
 
