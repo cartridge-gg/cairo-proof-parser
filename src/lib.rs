@@ -57,26 +57,11 @@ impl Display for ParseStarkProof {
     }
 }
 
-pub fn parse(input: &str) -> anyhow::Result<ParseStarkProof> {
+pub fn parse(input: &str) -> anyhow::Result<StarkProof> {
     let proof_json = serde_json::from_str::<ProofJSON>(input)?;
     let stark_proof = StarkProof::try_from(proof_json)?;
 
-    let new_serialized = to_felts(&stark_proof)?;
-    println!("{:?}", stark_proof.witness);
-
-    let expr_proof = ParseStarkProof {
-        config: Exprs::from(stark_proof.config),
-        public_input: Exprs::from(stark_proof.public_input),
-        unsent_commitment: Exprs::from(stark_proof.unsent_commitment),
-        witness: Exprs::from(stark_proof.witness),
-    };
-
-    // let expr_serialized: Vec<FieldElement> = expr_proof.clone().into();
-    let expr_serialized: Vec<FieldElement> = expr_proof.clone().into();
-
-    assert_eq!(expr_serialized, new_serialized);
-
-    Ok(expr_proof)
+    Ok(stark_proof)
 }
 
 pub fn parse_raw(input: &str) -> anyhow::Result<StarkProof> {

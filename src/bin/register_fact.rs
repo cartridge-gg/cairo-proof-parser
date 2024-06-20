@@ -1,4 +1,5 @@
 use cairo_proof_parser::{
+    deser::ser::to_felts,
     output::{extract_output, ExtractOutputResult},
     parse,
     program::{extract_program, ExtractProgramResult},
@@ -70,7 +71,7 @@ async fn main() -> anyhow::Result<()> {
 
     let expected_fact = poseidon_hash_many(&[program_hash, program_output_hash]);
 
-    let serialized_proof: Vec<FieldElement> = parse(&input)?.into();
+    let serialized_proof = to_felts(&parse(&input)?)?;
     let tx = verify_and_register_fact(account, serialized_proof).await?;
     println!("tx: {tx}");
     println!("expected_fact: {}", expected_fact.to_string());
