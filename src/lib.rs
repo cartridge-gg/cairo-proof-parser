@@ -14,15 +14,16 @@ mod stark_proof;
 mod utils;
 
 pub use ast::{Expr, Exprs};
+use deser::ser::to_felts;
 use itertools::chain;
 use starknet_crypto::FieldElement;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ParseStarkProof {
     pub config: Exprs,
     pub public_input: Exprs,
     pub unsent_commitment: Exprs,
-    // pub witness: Exprs,
+    pub witness: Exprs,
 }
 impl Into<Vec<FieldElement>> for ParseStarkProof {
     fn into(self) -> Vec<FieldElement> {
@@ -42,7 +43,7 @@ impl Display for ParseStarkProof {
             self.config.iter(),
             self.public_input.iter(),
             self.unsent_commitment.iter(),
-            // self.witness.iter()
+            self.witness.iter()
         ];
 
         for (i, expr) in result.enumerate() {
@@ -60,12 +61,22 @@ pub fn parse(input: &str) -> anyhow::Result<ParseStarkProof> {
     let proof_json = serde_json::from_str::<ProofJSON>(input)?;
     let stark_proof = StarkProof::try_from(proof_json)?;
 
-    Ok(ParseStarkProof {
+    let new_serialized = to_felts(&stark_proof)?;
+    println!("{:?}", stark_proof.witness);
+
+    let expr_proof = ParseStarkProof {
         config: Exprs::from(stark_proof.config),
         public_input: Exprs::from(stark_proof.public_input),
         unsent_commitment: Exprs::from(stark_proof.unsent_commitment),
-        // witness: Exprs::from(stark_proof.witness),
-    })
+        witness: Exprs::from(stark_proof.witness),
+    };
+
+    // let expr_serialized: Vec<FieldElement> = expr_proof.clone().into();
+    let expr_serialized: Vec<FieldElement> = expr_proof.clone().into();
+
+    assert_eq!(expr_serialized, new_serialized);
+
+    Ok(expr_proof)
 }
 
 pub fn parse_raw(input: &str) -> anyhow::Result<StarkProof> {

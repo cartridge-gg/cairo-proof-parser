@@ -9,6 +9,6 @@ fn main() -> anyhow::Result<()> {
     // Parse the input as an AST
     let proof = parse(&input)?;
 
-    println!("{proof}");
+    println!("{proof:?}");
     Ok(())
 }

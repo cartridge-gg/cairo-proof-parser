@@ -4,19 +4,19 @@ use std::{
     vec,
 };
 
-use anyhow::anyhow;
+use anyhow::{anyhow, Context};
 use num_bigint::BigUint;
 use serde::Deserialize;
 use starknet_crypto::FieldElement;
 
 use crate::{
-    annotations::{extract::FromStrHex, Annotations},
+    annotations::Annotations,
     builtins::Builtin,
     deser::deser::from_felts_with_lengths,
     layout::Layout,
     stark_proof::{
-        CairoPublicInput, FriConfig, FriLayerWitness, FriUnsentCommitment, ProofOfWorkConfig,
-        ProofOfWorkUnsentCommitment, PublicMemoryCell, SegmentInfo, StarkConfig, StarkProof,
+        CairoPublicInput, FriConfig, FriLayerWitness, FriUnsentCommitment, FriWitness,
+        ProofOfWorkConfig, PublicMemoryCell, SegmentInfo, StarkConfig, StarkProof,
         StarkUnsentCommitment, StarkWitness, TableCommitmentConfig, TracesConfig,
         TracesUnsentCommitment, VectorCommitmentConfig,
     },
@@ -193,11 +193,22 @@ impl ProofJSON {
         public_input: PublicInput,
         // z: BigUint,
         // alpha: BigUint,
-    ) -> anyhow::Result<CairoPublicInput> {
+    ) -> anyhow::Result<CairoPublicInput<FieldElement>> {
         let continuous_page_headers = vec![];
         // Self::continuous_page_headers(&public_input.public_memory, z, alpha)?; this line does for now anyway
         let main_page = Self::main_page(&public_input.public_memory)?;
-        let dynamic_params = public_input.dynamic_params.unwrap_or_default();
+        let dynamic_params = public_input
+            .dynamic_params
+            .unwrap_or_default()
+            .into_iter()
+            .map(|e| {
+                Ok((
+                    e.0,
+                    FieldElement::from_hex_be(&e.1.to_str_radix(16))
+                        .context("Invalid dynamic param")?,
+                ))
+            })
+            .collect::<anyhow::Result<_>>()?;
         let memory_segments = Builtin::sort_segments(public_input.memory_segments)
             .into_iter()
             .map(|s| SegmentInfo {
@@ -205,12 +216,10 @@ impl ProofJSON {
                 stop_ptr: s.stop_ptr,
             })
             .collect::<Vec<_>>();
-        let layout = BigUint::from_bytes_be(&public_input.layout.bytes_encode());
+        let layout =
+            FieldElement::from_hex_be(&prefix_hex::encode(&public_input.layout.bytes_encode()))?;
         let (padding_addr, padding_value) = match public_input.public_memory.first() {
-            Some(m) => (
-                m.address,
-                BigUint::from_str_hex(&m.value).ok_or(anyhow::anyhow!("Invalid memory value"))?,
-            ),
+            Some(m) => (m.address, FieldElement::from_hex_be(&m.value)?),
             None => anyhow::bail!("Invalid public memory"),
         };
         Ok(CairoPublicInput {
@@ -219,7 +228,7 @@ impl ProofJSON {
             range_check_min: public_input.rc_min,
             range_check_max: public_input.rc_max,
             layout,
-            dynamic_params: dynamic_params.into_iter().collect(),
+            dynamic_params,
             n_segments: memory_segments.len(),
             segments: memory_segments,
             padding_addr,
@@ -231,15 +240,16 @@ impl ProofJSON {
         })
     }
 
-    fn main_page(public_memory: &[PublicMemoryElement]) -> anyhow::Result<Vec<PublicMemoryCell>> {
+    fn main_page(
+        public_memory: &[PublicMemoryElement],
+    ) -> anyhow::Result<Vec<PublicMemoryCell<FieldElement>>> {
         public_memory
             .iter()
             .filter(|m| m.page == 0)
             .map(|m| {
                 Ok(PublicMemoryCell {
                     address: m.address,
-                    value: BigUint::from_str_hex(&m.value)
-                        .ok_or(anyhow::anyhow!("Invalid memory value"))?,
+                    value: FieldElement::from_hex_be(&m.value).context("Invalid memory value")?,
                 })
             })
             .collect::<anyhow::Result<Vec<_>>>()
@@ -266,9 +276,7 @@ impl ProofJSON {
                 inner_layers: bigints_to_fe(&annotations.fri_layers_commitments),
                 last_layer_coefficients: bigints_to_fe(&annotations.fri_last_layer_coefficients),
             },
-            proof_of_work: ProofOfWorkUnsentCommitment {
-                nonce: bigint_to_fe(&annotations.proof_of_work_nonce),
-            },
+            proof_of_work_nonce: bigint_to_fe(&annotations.proof_of_work_nonce),
         }
     }
 
@@ -282,14 +290,16 @@ impl ProofJSON {
             ),
             composition_decommitment: bigints_to_fe(&annotations.composition_witness_leaves),
             composition_witness: bigints_to_fe(&annotations.composition_witness_authentications),
-            fri_witness: annotations
-                .fri_witnesses
-                .iter()
-                .map(|w| FriLayerWitness {
-                    leaves: bigints_to_fe(&w.leaves),
-                    table_witness: bigints_to_fe(&w.authentications),
-                })
-                .collect(),
+            fri_witness: FriWitness {
+                layers: annotations
+                    .fri_witnesses
+                    .iter()
+                    .map(|w| FriLayerWitness {
+                        leaves: bigints_to_fe(&w.leaves),
+                        table_witness: bigints_to_fe(&w.authentications),
+                    })
+                    .collect(),
+            },
         }
     }
 }
@@ -337,7 +347,7 @@ impl TryFrom<ProofJSON> for StarkProof {
             config: config.clone(),
             public_input: public_input.clone(),
             unsent_commitment: unsent_commitment_from_annotations,
-            witness: witness_from_annotations,
+            witness: witness_from_annotations.into(),
         };
 
         let (unsent_commitment, witness): (StarkUnsentCommitment, StarkWitness) =
@@ -367,7 +377,7 @@ impl TryFrom<ProofJSON> for StarkProof {
             config,
             public_input,
             unsent_commitment,
-            witness,
+            witness: witness.into(),
         };
 
         assert_eq!(proof_from_annotations, proof);
