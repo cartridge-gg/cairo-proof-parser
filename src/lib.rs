@@ -9,6 +9,7 @@ pub mod json_parser;
 mod layout;
 pub mod output;
 pub mod program;
+mod proof_params;
 mod stark_proof;
 mod utils;
 

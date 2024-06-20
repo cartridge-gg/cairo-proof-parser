@@ -14,6 +14,7 @@ use crate::{
     builtins::Builtin,
     deser::deser::from_felts_with_lengths,
     layout::Layout,
+    proof_params::{ProofParameters, ProverConfig},
     stark_proof::{
         CairoPublicInput, FriConfig, FriLayerWitness, FriUnsentCommitment, FriWitness,
         ProofOfWorkConfig, PublicMemoryCell, SegmentInfo, StarkConfig, StarkProof,
@@ -29,27 +30,7 @@ pub struct ProofJSON {
     annotations: Vec<String>,
     public_input: PublicInput,
     proof_hex: String,
-}
-
-#[derive(Deserialize, Debug, Clone, PartialEq)]
-pub struct ProofParameters {
-    pub stark: Stark,
-    #[serde(default)]
-    pub n_verifier_friendly_commitment_layers: u32,
-}
-
-#[derive(Deserialize, Debug, Clone, PartialEq)]
-pub struct Stark {
-    pub fri: Fri,
-    pub log_n_cosets: u32,
-}
-
-#[derive(Deserialize, Debug, Clone, PartialEq)]
-pub struct Fri {
-    pub fri_step_list: Vec<u32>,
-    pub last_layer_degree_bound: u32,
-    pub n_queries: u32,
-    pub proof_of_work_bits: u32,
+    prover_config: ProverConfig,
 }
 
 #[derive(Deserialize, Debug, Clone, PartialEq)]
@@ -356,7 +337,10 @@ impl TryFrom<ProofJSON> for StarkProof {
                 vec![
                     ("oods_values", vec![135]),
                     ("inner_layers", vec![3]),
-                    ("last_layer_coefficients", vec![128]),
+                    (
+                        "last_layer_coefficients",
+                        vec![value.proof_parameters.stark.fri.last_layer_degree_bound as usize], // 128
+                    ),
                     ("original_traces_decommitment", vec![112]),
                     ("traces_decommitment_interaction", vec![48]),
                     ("original_traces_witness", vec![257]),
