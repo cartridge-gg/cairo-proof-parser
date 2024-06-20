@@ -3,7 +3,6 @@ use std::{convert::TryFrom, fmt::Display};
 use crate::{json_parser::ProofJSON, stark_proof::StarkProof};
 
 mod annotations;
-mod ast;
 mod builtins;
 pub mod deser;
 pub mod json_parser;
@@ -13,45 +12,18 @@ pub mod program;
 mod stark_proof;
 mod utils;
 
-pub use ast::{Expr, Exprs};
 use deser::ser::to_felts;
-use itertools::chain;
-use starknet_crypto::FieldElement;
 
-#[derive(Debug, Clone)]
-pub struct ParseStarkProof {
-    pub config: Exprs,
-    pub public_input: Exprs,
-    pub unsent_commitment: Exprs,
-    pub witness: Exprs,
-}
-impl Into<Vec<FieldElement>> for ParseStarkProof {
-    fn into(self) -> Vec<FieldElement> {
-        chain![
-            <Exprs as Into<Vec<FieldElement>>>::into(self.config),
-            <Exprs as Into<Vec<FieldElement>>>::into(self.public_input),
-            <Exprs as Into<Vec<FieldElement>>>::into(self.unsent_commitment),
-            // <Exprs as Into<Vec<FieldElement>>>::into(self.witness),
-        ]
-        .collect()
-    }
-}
-
-impl Display for ParseStarkProof {
+impl Display for StarkProof {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let result = chain![
-            self.config.iter(),
-            self.public_input.iter(),
-            self.unsent_commitment.iter(),
-            self.witness.iter()
-        ];
+        let serialized = to_felts(self).map_err(|_| std::fmt::Error)?;
+        let done = serialized
+            .into_iter()
+            .map(|f| format!("{f}"))
+            .collect::<Vec<_>>()
+            .join(" ");
 
-        for (i, expr) in result.enumerate() {
-            if i != 0 {
-                write!(f, " ")?;
-            }
-            write!(f, "{expr}")?;
-        }
+        write!(f, "{done}")?;
 
         Ok(())
     }
