@@ -84,7 +84,7 @@ pub struct StarkWitness {
     pub original_traces_decommitment: Vec<FieldElement>,
     pub original_traces_witness: Vec<FieldElement>,
     #[serde(deserialize_with = "deserialize_montgomery_vec")]
-    pub traces_decommitment_interaction: Vec<FieldElement>,
+    pub interaction_traces_decommitment: Vec<FieldElement>,
     pub interaction_traces_witness: Vec<FieldElement>,
     #[serde(deserialize_with = "deserialize_montgomery_vec")]
     pub composition_decommitment: Vec<FieldElement>,
@@ -97,7 +97,7 @@ pub struct StarkWitnessReordered {
     #[serde(serialize_with = "double_len_serialize")]
     pub original_traces_decommitment: Vec<FieldElement>,
     #[serde(serialize_with = "double_len_serialize")]
-    pub traces_decommitment_interaction: Vec<FieldElement>,
+    pub interaction_traces_decommitment: Vec<FieldElement>,
     #[serde(serialize_with = "double_len_serialize")]
     pub original_traces_witness: Vec<FieldElement>,
     #[serde(serialize_with = "double_len_serialize")]
@@ -113,7 +113,7 @@ impl From<StarkWitness> for StarkWitnessReordered {
     fn from(witness: StarkWitness) -> Self {
         Self {
             original_traces_decommitment: witness.original_traces_decommitment,
-            traces_decommitment_interaction: witness.traces_decommitment_interaction,
+            interaction_traces_decommitment: witness.interaction_traces_decommitment,
             original_traces_witness: witness.original_traces_witness,
             interaction_traces_witness: witness.interaction_traces_witness,
             composition_decommitment: witness.composition_decommitment,

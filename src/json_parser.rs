@@ -13,7 +13,10 @@ use crate::{
     annotations::Annotations,
     builtins::Builtin,
     deser::deser::from_felts_with_lengths,
-    layout::Layout,
+    layout::{
+        self, data_queries_len, fft_bases, list_of_cosets, oods_len, trace_len, Layout,
+        ProofStructure,
+    },
     proof_params::{ProofParameters, ProverConfig},
     stark_proof::{
         CairoPublicInput, FriConfig, FriLayerWitness, FriUnsentCommitment, FriWitness,
@@ -49,9 +52,9 @@ pub struct PublicMemoryElement {
 #[derive(Deserialize, Debug, Clone, PartialEq)]
 pub struct PublicInput {
     dynamic_params: Option<BTreeMap<String, BigUint>>,
-    layout: Layout,
+    pub layout: Layout,
     memory_segments: HashMap<String, MemorySegmentAddress>,
-    n_steps: u32,
+    pub n_steps: u32,
     public_memory: Vec<PublicMemoryElement>,
     rc_min: u32,
     rc_max: u32,
@@ -67,7 +70,7 @@ pub fn bigints_to_fe(bigint: &Vec<BigUint>) -> Vec<FieldElement> {
 
 impl ProofJSON {
     const COMPONENT_HEIGHT: u32 = 16;
-    pub fn stark_config(&self) -> anyhow::Result<StarkConfig> {
+    pub fn stark_config(&self) -> anyhow::Result<(StarkConfig, Layout)> {
         let stark = &self.proof_parameters.stark;
         let n_verifier_friendly_commitment_layers =
             self.proof_parameters.n_verifier_friendly_commitment_layers;
@@ -139,16 +142,19 @@ impl ProofJSON {
             log_last_layer_degree_bound,
         };
 
-        Ok(StarkConfig {
-            traces,
-            composition,
-            fri,
-            proof_of_work,
-            log_trace_domain_size: self.log_trace_domain_size()?,
-            n_queries,
-            log_n_cosets: stark.log_n_cosets,
-            n_verifier_friendly_commitment_layers,
-        })
+        Ok((
+            StarkConfig {
+                traces,
+                composition,
+                fri,
+                proof_of_work,
+                log_trace_domain_size: self.log_trace_domain_size()?,
+                n_queries,
+                log_n_cosets: stark.log_n_cosets,
+                n_verifier_friendly_commitment_layers,
+            },
+            self.public_input.layout.clone(),
+        ))
     }
 
     fn log_trace_domain_size(&self) -> anyhow::Result<u32> {
@@ -264,7 +270,7 @@ impl ProofJSON {
     fn stark_witness(annotations: &Annotations) -> StarkWitness {
         StarkWitness {
             original_traces_decommitment: bigints_to_fe(&annotations.original_witness_leaves),
-            traces_decommitment_interaction: bigints_to_fe(&annotations.interaction_witness_leaves),
+            interaction_traces_decommitment: bigints_to_fe(&annotations.interaction_witness_leaves),
             original_traces_witness: bigints_to_fe(&annotations.original_witness_authentications),
             interaction_traces_witness: bigints_to_fe(
                 &annotations.interaction_witness_authentications,
@@ -304,7 +310,7 @@ impl TryFrom<&str> for HexProof {
 impl TryFrom<ProofJSON> for StarkProof {
     type Error = anyhow::Error;
     fn try_from(value: ProofJSON) -> anyhow::Result<Self> {
-        let config = value.stark_config()?;
+        let (config, layout) = value.stark_config()?;
 
         let hex = HexProof::try_from(value.proof_hex.as_str())?;
 
@@ -331,31 +337,46 @@ impl TryFrom<ProofJSON> for StarkProof {
             witness: witness_from_annotations.into(),
         };
 
+        let proof_structure = ProofStructure::new(
+            &value.proof_parameters,
+            value.public_input.layout,
+            value.public_input.n_steps,
+        );
+
         let (unsent_commitment, witness): (StarkUnsentCommitment, StarkWitness) =
             from_felts_with_lengths(
                 &hex.0,
                 vec![
-                    ("oods_values", vec![135]),
+                    ("oods_values", vec![oods_len(layout)]),
                     ("inner_layers", vec![3]),
                     (
                         "last_layer_coefficients",
                         vec![value.proof_parameters.stark.fri.last_layer_degree_bound as usize], // 128
                     ),
                     ("original_traces_decommitment", vec![112]),
-                    ("traces_decommitment_interaction", vec![48]),
+                    ("interaction_traces_decommitment", vec![48]),
                     ("original_traces_witness", vec![257]),
                     ("skip_traces_witness", vec![48]),
                     ("interaction_traces_witness", vec![257]),
-                    ("composition_decommitment", vec![32]),
+                    (
+                        "composition_decommitment",
+                        vec![
+                            (value.prover_config.n_out_of_memory_merkle_layers
+                                * value.prover_config.table_prover_n_tasks_per_segment)
+                                as usize,
+                        ],
+                    ),
                     ("composition_witness", vec![257]),
-                    ("fri_witness", vec![3]), // layers
-                    ("leaves", vec![240, 240, 112]),
+                    ("fri_witness", vec![proof_structure.layer_count]), // layers
+                    ("leaves", proof_structure.layer),
                     ("table_witness", vec![193, 129, 81]),
                 ]
                 .into_iter()
                 .map(|(k, v)| (k.to_string(), v))
                 .collect(),
             )?;
+
+        println!("{:?}", witness.composition_witness);
 
         let proof = StarkProof {
             config,

@@ -18,6 +18,8 @@ mod tests {
         assert_eq!(log2_if_power_of_2(4), Some(2));
         assert_eq!(log2_if_power_of_2(8), Some(3));
         assert_eq!(log2_if_power_of_2(16), Some(4));
+        assert_eq!(log2_if_power_of_2(16384), Some(14));
+        assert_eq!(log2_if_power_of_2(16384 * 16384), Some(28));
     }
 
     #[test]
@@ -27,6 +29,8 @@ mod tests {
         assert_eq!(log2_if_power_of_2(5), None);
         assert_eq!(log2_if_power_of_2(6), None);
         assert_eq!(log2_if_power_of_2(9), None);
+        assert_eq!(log2_if_power_of_2(16383), None);
+        assert_eq!(log2_if_power_of_2(16385), None);
     }
 
     #[test]
