@@ -81,43 +81,43 @@ pub struct FriUnsentCommitment {
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct StarkWitness {
     #[serde(deserialize_with = "deserialize_montgomery_vec")]
-    pub original_traces_decommitment: Vec<FieldElement>,
-    pub original_traces_witness: Vec<FieldElement>,
+    pub original_leaves: Vec<FieldElement>,
+    pub original_authentications: Vec<FieldElement>,
     #[serde(deserialize_with = "deserialize_montgomery_vec")]
-    pub interaction_traces_decommitment: Vec<FieldElement>,
-    pub interaction_traces_witness: Vec<FieldElement>,
+    pub interaction_leaves: Vec<FieldElement>,
+    pub interaction_authentications: Vec<FieldElement>,
     #[serde(deserialize_with = "deserialize_montgomery_vec")]
-    pub composition_decommitment: Vec<FieldElement>,
-    pub composition_witness: Vec<FieldElement>,
+    pub composition_leaves: Vec<FieldElement>,
+    pub composition_authentications: Vec<FieldElement>,
     pub fri_witness: FriWitness,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct StarkWitnessReordered {
     #[serde(serialize_with = "double_len_serialize")]
-    pub original_traces_decommitment: Vec<FieldElement>,
+    pub original_leaves: Vec<FieldElement>,
     #[serde(serialize_with = "double_len_serialize")]
-    pub interaction_traces_decommitment: Vec<FieldElement>,
+    pub interaction_leaves: Vec<FieldElement>,
     #[serde(serialize_with = "double_len_serialize")]
-    pub original_traces_witness: Vec<FieldElement>,
+    pub original_authentications: Vec<FieldElement>,
     #[serde(serialize_with = "double_len_serialize")]
-    pub interaction_traces_witness: Vec<FieldElement>,
+    pub interaction_authentications: Vec<FieldElement>,
     #[serde(serialize_with = "double_len_serialize")]
-    pub composition_decommitment: Vec<FieldElement>,
+    pub composition_leaves: Vec<FieldElement>,
     #[serde(serialize_with = "double_len_serialize")]
-    pub composition_witness: Vec<FieldElement>,
+    pub composition_authentications: Vec<FieldElement>,
     pub fri_witness: FriWitness,
 }
 
 impl From<StarkWitness> for StarkWitnessReordered {
     fn from(witness: StarkWitness) -> Self {
         Self {
-            original_traces_decommitment: witness.original_traces_decommitment,
-            interaction_traces_decommitment: witness.interaction_traces_decommitment,
-            original_traces_witness: witness.original_traces_witness,
-            interaction_traces_witness: witness.interaction_traces_witness,
-            composition_decommitment: witness.composition_decommitment,
-            composition_witness: witness.composition_witness,
+            original_leaves: witness.original_leaves,
+            interaction_leaves: witness.interaction_leaves,
+            original_authentications: witness.original_authentications,
+            interaction_authentications: witness.interaction_authentications,
+            composition_leaves: witness.composition_leaves,
+            composition_authentications: witness.composition_authentications,
             fri_witness: witness.fri_witness,
         }
     }

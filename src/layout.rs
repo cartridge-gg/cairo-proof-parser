@@ -1,14 +1,9 @@
-use std::{collections::BTreeMap, convert::TryInto, fmt::Display, ops::Deref};
+use std::{collections::BTreeMap, convert::TryInto, fmt::Display};
 
 use num_bigint::BigUint;
 use serde::Deserialize;
 
-use crate::{
-    json_parser::PublicInput,
-    layout,
-    proof_params::{Fri, ProofParameters, Stark},
-    utils::log2_if_power_of_2,
-};
+use crate::{json_parser::PublicInput, proof_params::ProofParameters, utils::log2_if_power_of_2};
 
 // For now only the recursive and starknet layouts is supported
 #[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
@@ -161,19 +156,6 @@ impl Layout {
             _ => unimplemented!(),
         }
     }
-
-    // https://github.com/cartridge-gg/stone-prover/blob/fd78b4db8d6a037aa467b7558ac8930c10e48dc1/src/starkware/stark/stark.cc#L569-L570
-    pub fn num_columns(&self) -> usize {
-        match self {
-            Layout::Recursive => self.get_consts().num_columns_second as usize,
-            _ => unimplemented!(),
-        }
-    }
-}
-
-// https://github.com/cartridge-gg/stone-prover/blob/fd78b4db8d6a037aa467b7558ac8930c10e48dc1/src/starkware/stark/oods.cc#L92-L93
-pub fn oods_len(layout: Layout) -> usize {
-    layout.mask_len() + layout.num_columns() - 1
 }
 
 // https://github.com/cartridge-gg/stone-prover/blob/fd78b4db8d6a037aa467b7558ac8930c10e48dc1/src/starkware/stark/committed_trace.cc#L212-L213
@@ -243,21 +225,41 @@ pub fn leaves(proof_params: &ProofParameters) -> Vec<usize> {
         .collect()
 }
 
+// https://github.com/cartridge-gg/stone-prover/blob/fd78b4db8d6a037aa467b7558ac8930c10e48dc1/src/starkware/commitment_scheme/packaging_commitment_scheme.cc#L144-L146
+pub fn authentications() -> usize {
+    256 + 1
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct ProofStructure {
-    pub layer0_oracle_row: u32,
+    pub first_layer_queries: usize,
     pub layer: Vec<usize>,
     pub layer_count: usize,
+    pub composition_decommitment: usize,
+    pub oods: usize,
+    pub last_layer_degree_bound: usize,
+    pub authentications: usize,
 }
 
 impl ProofStructure {
-    pub fn new(proof_params: &ProofParameters, layout: Layout, n_steps: u32) -> Self {
+    pub fn new(proof_params: &ProofParameters, layout: Layout, _n_steps: u32) -> Self {
+        let n_queries = proof_params.stark.fri.n_queries;
+        let mask_len = layout.mask_len();
+        let layout = layout.get_consts();
+
         ProofStructure {
             // https://github.com/cartridge-gg/stone-prover/blob/fd78b4db8d6a037aa467b7558ac8930c10e48dc1/src/starkware/stark/stark.cc#L276-L277
-            layer0_oracle_row: proof_params.stark.fri.n_queries
-                * layout.get_consts().num_columns_first,
+            first_layer_queries: (n_queries * layout.num_columns_first) as usize,
+
             layer: leaves(proof_params),
-            layer_count: leaves(proof_params).len(),
+            layer_count: (proof_params.stark.fri.fri_step_list.len() - 1).into(),
+            composition_decommitment: (n_queries * layout.num_columns_second) as usize,
+
+            // https://github.com/cartridge-gg/stone-prover/blob/fd78b4db8d6a037aa467b7558ac8930c10e48dc1/src/starkware/stark/oods.cc#L92-L93
+            oods: mask_len + layout.num_columns_second as usize - 1,
+            last_layer_degree_bound: proof_params.stark.fri.last_layer_degree_bound as usize,
+
+            authentications: authentications(),
         }
     }
 }
@@ -284,9 +286,13 @@ fn test_lens() {
     let result = ProofStructure::new(&proof_params, layout, n_steps);
 
     let expected = ProofStructure {
-        layer0_oracle_row: 112,
+        first_layer_queries: 112,
         layer: vec![240, 240, 112],
         layer_count: 3,
+        composition_decommitment: 48,
+        oods: 135,
+        last_layer_degree_bound: 128,
+        authentications: 257,
     };
     assert_eq!(result, expected);
 }

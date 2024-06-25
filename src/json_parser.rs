@@ -13,10 +13,7 @@ use crate::{
     annotations::Annotations,
     builtins::Builtin,
     deser::deser::from_felts_with_lengths,
-    layout::{
-        self, data_queries_len, fft_bases, list_of_cosets, oods_len, trace_len, Layout,
-        ProofStructure,
-    },
+    layout::{Layout, ProofStructure},
     proof_params::{ProofParameters, ProverConfig},
     stark_proof::{
         CairoPublicInput, FriConfig, FriLayerWitness, FriUnsentCommitment, FriWitness,
@@ -269,14 +266,12 @@ impl ProofJSON {
 
     fn stark_witness(annotations: &Annotations) -> StarkWitness {
         StarkWitness {
-            original_traces_decommitment: bigints_to_fe(&annotations.original_witness_leaves),
-            interaction_traces_decommitment: bigints_to_fe(&annotations.interaction_witness_leaves),
-            original_traces_witness: bigints_to_fe(&annotations.original_witness_authentications),
-            interaction_traces_witness: bigints_to_fe(
-                &annotations.interaction_witness_authentications,
-            ),
-            composition_decommitment: bigints_to_fe(&annotations.composition_witness_leaves),
-            composition_witness: bigints_to_fe(&annotations.composition_witness_authentications),
+            original_leaves: bigints_to_fe(&annotations.original_leaves),
+            interaction_leaves: bigints_to_fe(&annotations.interaction_leaves),
+            original_authentications: bigints_to_fe(&annotations.original_authentications),
+            interaction_authentications: bigints_to_fe(&annotations.interaction_authentications),
+            composition_leaves: bigints_to_fe(&annotations.composition_leaves),
+            composition_authentications: bigints_to_fe(&annotations.composition_authentications),
             fri_witness: FriWitness {
                 layers: annotations
                     .fri_witnesses
@@ -347,26 +342,34 @@ impl TryFrom<ProofJSON> for StarkProof {
             from_felts_with_lengths(
                 &hex.0,
                 vec![
-                    ("oods_values", vec![oods_len(layout)]),
-                    ("inner_layers", vec![3]),
+                    ("oods_values", vec![proof_structure.oods]),
+                    ("inner_layers", vec![proof_structure.layer_count]),
                     (
                         "last_layer_coefficients",
-                        vec![value.proof_parameters.stark.fri.last_layer_degree_bound as usize], // 128
+                        vec![proof_structure.last_layer_degree_bound], // 128
                     ),
-                    ("original_traces_decommitment", vec![112]),
-                    ("interaction_traces_decommitment", vec![48]),
-                    ("original_traces_witness", vec![257]),
-                    ("skip_traces_witness", vec![48]),
-                    ("interaction_traces_witness", vec![257]),
+                    // WITNESS
                     (
-                        "composition_decommitment",
-                        vec![
-                            (value.prover_config.n_out_of_memory_merkle_layers
-                                * value.prover_config.table_prover_n_tasks_per_segment)
-                                as usize,
-                        ],
+                        "original_leaves",
+                        vec![proof_structure.first_layer_queries], // 112
                     ),
-                    ("composition_witness", vec![257]),
+                    (
+                        "original_authentications",
+                        vec![proof_structure.authentications], // 257
+                    ),
+                    (
+                        "interaction_leaves",
+                        vec![proof_structure.composition_decommitment], // 48
+                    ),
+                    (
+                        "interaction_authentications",
+                        vec![proof_structure.authentications], // 257
+                    ),
+                    ("composition_leaves", vec![32]), // 32
+                    (
+                        "composition_authentications",
+                        vec![proof_structure.authentications], // 257
+                    ),
                     ("fri_witness", vec![proof_structure.layer_count]), // layers
                     ("leaves", proof_structure.layer),
                     ("table_witness", vec![193, 129, 81]),
@@ -376,7 +379,7 @@ impl TryFrom<ProofJSON> for StarkProof {
                 .collect(),
             )?;
 
-        println!("{:?}", witness.composition_witness);
+        println!("{:?}", witness.composition_authentications);
 
         let proof = StarkProof {
             config,
