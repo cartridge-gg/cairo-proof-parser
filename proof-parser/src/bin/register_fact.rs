@@ -1,10 +1,10 @@
 use cairo_proof_parser::{
-    deser::ser::to_felts,
     output::{extract_output, ExtractOutputResult},
     parse,
     program::{extract_program, ExtractProgramResult},
 };
 use clap::Parser;
+use serde_felt::to_felts;
 use starknet::accounts::ConnectedAccount;
 use starknet::accounts::{Account, Call, ExecutionEncoding, SingleOwnerAccount};
 use starknet::core::types::{

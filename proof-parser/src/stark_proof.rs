@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 use starknet_crypto::FieldElement;
 
-use crate::deser::montgomery::deserialize_montgomery_vec;
+use serde_felt::deserialize_montgomery_vec;
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct StarkProof {
@@ -80,7 +80,6 @@ pub struct FriUnsentCommitment {
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct StarkWitness {
-    
     #[serde(deserialize_with = "deserialize_montgomery_vec")]
     pub original_leaves: Vec<FieldElement>,
     pub original_authentications: Vec<FieldElement>,

@@ -4,7 +4,6 @@ use crate::{json_parser::ProofJSON, stark_proof::StarkProof};
 
 mod annotations;
 mod builtins;
-pub mod deser;
 pub mod json_parser;
 mod layout;
 pub mod output;
@@ -13,7 +12,7 @@ mod proof_params;
 mod stark_proof;
 mod utils;
 
-use deser::ser::to_felts;
+pub use serde_felt::to_felts;
 
 impl Display for StarkProof {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

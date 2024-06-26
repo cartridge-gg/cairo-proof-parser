@@ -3,11 +3,7 @@ use std::{collections::BTreeMap, convert::TryInto, fmt::Display};
 use num_bigint::BigUint;
 use serde::Deserialize;
 
-use crate::{
-    json_parser::PublicInput,
-    proof_params::{Fri, ProofParameters, Stark},
-    utils::log2_if_power_of_2,
-};
+use crate::proof_params::{Fri, ProofParameters};
 
 // For now only the recursive and starknet layouts is supported
 #[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
@@ -162,53 +158,8 @@ impl Layout {
     }
 }
 
-// https://github.com/cartridge-gg/stone-prover/blob/fd78b4db8d6a037aa467b7558ac8930c10e48dc1/src/starkware/stark/committed_trace.cc#L212-L213
-pub fn data_queries_len(public_input: &PublicInput) -> usize {
-    let trace_len = trace_len(public_input.layout, public_input.n_steps);
-    match public_input.layout {
-        Layout::Recursive => 2,
-        _ => unimplemented!(),
-    }
-}
-
-// https://github.com/cartridge-gg/stone-prover/blob/fd78b4db8d6a037aa467b7558ac8930c10e48dc1/src/starkware/air/cpu/board/cpu_air_definition4.h#L396-L397
-pub fn trace_len(layout: Layout, n_steps: u32) -> u32 {
-    match layout {
-        Layout::Recursive => n_steps * 16 * 1,
-        _ => unimplemented!(),
-    }
-}
-
-// https://github.com/cartridge-gg/stone-prover/blob/fd78b4db8d6a037aa467b7558ac8930c10e48dc1/src/starkware/stark/stark.cc#L164-L167
-pub fn list_of_cosets(public_input: &PublicInput, proof_params: &ProofParameters) -> usize {
-    1usize << proof_params.stark.log_n_cosets
-}
-
-// https://github.com/cartridge-gg/stone-prover/blob/fd78b4db8d6a037aa467b7558ac8930c10e48dc1/src/starkware/stark/stark.cc#L204-L205
-pub fn fft_bases(layout: Layout, n_steps: u32, proof_params: &ProofParameters) -> u32 {
-    let trace_len = trace_len(layout, n_steps);
-    let log_trace_len = log2_if_power_of_2(trace_len).unwrap();
-    log_trace_len + proof_params.stark.log_n_cosets
-}
-
-// https://github.com/cartridge-gg/stone-prover/blob/fd78b4db8d6a037aa467b7558ac8930c10e48dc1/src/starkware/fri/fri_verifier.cc#L104-L105
-pub fn first_fri_layer(proof_params: &ProofParameters) -> u32 {
-    proof_params.stark.fri.fri_step_list[0]
-}
-
-// https://github.com/cartridge-gg/stone-prover/blob/fd78b4db8d6a037aa467b7558ac8930c10e48dc1/src/starkware/fri/fri_verifier.cc#L156-L157
-pub fn inner_fri_layers(proof_params: &ProofParameters) -> Vec<(u32, u32)> {
-    proof_params
-        .stark
-        .fri
-        .fri_step_list
-        .iter()
-        .skip(1)
-        .map(|&x| (x, 1 << x))
-        .collect()
-}
-
 // https://github.com/cartridge-gg/stone-prover/blob/fd78b4db8d6a037aa467b7558ac8930c10e48dc1/src/starkware/stark/stark.cc#L303-L304
+#[cfg(test)]
 pub fn fri_degree_bound(proof_params: &ProofParameters) -> u32 {
     let mut expected = proof_params.stark.fri.last_layer_degree_bound;
     for s in &proof_params.stark.fri.fri_step_list {
@@ -297,7 +248,7 @@ fn test_lens() {
     let n_steps = 16384;
     let layout = Layout::Recursive;
     let proof_params = ProofParameters {
-        stark: Stark {
+        stark: crate::proof_params::Stark {
             fri: Fri {
                 fri_step_list: vec![0, 4, 4, 3],
                 last_layer_degree_bound: 128,

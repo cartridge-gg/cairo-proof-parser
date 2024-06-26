@@ -1,6 +1,6 @@
 use std::io::{self, Read};
 
-use cairo_proof_parser::{deser::ser::to_felts, parse};
+use cairo_proof_parser::{parse, to_felts};
 
 fn main() -> anyhow::Result<()> {
     let mut input = String::new();

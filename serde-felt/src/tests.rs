@@ -1,10 +1,7 @@
 use serde::{Deserialize, Serialize};
-use starknet_crypto::FieldElement;
+use starknet_ff::FieldElement;
 
-use crate::deser::{
-    deser::{from_felts, from_felts_with_lengths},
-    ser::to_felts,
-};
+use crate::{from_felts, from_felts_with_lengths, to_felts};
 
 use super::error::Result;
 

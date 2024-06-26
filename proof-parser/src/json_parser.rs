@@ -7,12 +7,12 @@ use std::{
 use anyhow::{anyhow, Context};
 use num_bigint::BigUint;
 use serde::Deserialize;
+use serde_felt::from_felts_with_lengths;
 use starknet_crypto::FieldElement;
 
 use crate::{
     annotations::Annotations,
     builtins::Builtin,
-    deser::deser::from_felts_with_lengths,
     layout::{Layout, ProofStructure},
     proof_params::{ProofParameters, ProverConfig},
     stark_proof::{
