@@ -370,9 +370,9 @@ impl TryFrom<ProofJSON> for StarkProof {
                         "composition_authentications",
                         vec![proof_structure.authentications], // 257
                     ),
-                    ("fri_witness", vec![proof_structure.layer_count]), // layers
+                    ("fri_witness", vec![proof_structure.witness.len()]), // layers
                     ("leaves", proof_structure.layer),
-                    ("table_witness", vec![193, 129, 81]),
+                    ("table_witness", proof_structure.witness),
                 ]
                 .into_iter()
                 .map(|(k, v)| (k.to_string(), v))

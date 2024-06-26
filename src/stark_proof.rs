@@ -80,6 +80,7 @@ pub struct FriUnsentCommitment {
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct StarkWitness {
+    
     #[serde(deserialize_with = "deserialize_montgomery_vec")]
     pub original_leaves: Vec<FieldElement>,
     pub original_authentications: Vec<FieldElement>,
