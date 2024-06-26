@@ -123,13 +123,13 @@ impl From<StarkWitness> for StarkWitnessReordered {
     }
 }
 
-pub fn double_len_serialize<S>(value: &Vec<FieldElement>, serializer: S) -> Result<S::Ok, S::Error>
+pub fn double_len_serialize<S>(value: &[FieldElement], serializer: S) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
 {
     let value = VecWithLen {
         len: value.len(),
-        vec: value.clone(),
+        vec: value.to_vec(),
     };
     value.serialize(serializer)
 }

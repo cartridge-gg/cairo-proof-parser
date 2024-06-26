@@ -74,7 +74,7 @@ async fn main() -> anyhow::Result<()> {
     let serialized_proof = to_felts(&parse(&input)?)?;
     let tx = verify_and_register_fact(account, serialized_proof).await?;
     println!("tx: {tx}");
-    println!("expected_fact: {}", expected_fact.to_string());
+    println!("expected_fact: {}", expected_fact);
 
     Ok(())
 }

@@ -61,13 +61,13 @@ pub fn bigint_to_fe(bigint: &BigUint) -> FieldElement {
     FieldElement::from_hex_be(&bigint.to_str_radix(16)).unwrap()
 }
 
-pub fn bigints_to_fe(bigint: &Vec<BigUint>) -> Vec<FieldElement> {
+pub fn bigints_to_fe(bigint: &[BigUint]) -> Vec<FieldElement> {
     bigint.iter().map(bigint_to_fe).collect()
 }
 
 impl ProofJSON {
     const COMPONENT_HEIGHT: u32 = 16;
-    pub fn stark_config(&self) -> anyhow::Result<(StarkConfig, Layout)> {
+    pub fn stark_config(&self) -> anyhow::Result<StarkConfig> {
         let stark = &self.proof_parameters.stark;
         let n_verifier_friendly_commitment_layers =
             self.proof_parameters.n_verifier_friendly_commitment_layers;
@@ -139,19 +139,16 @@ impl ProofJSON {
             log_last_layer_degree_bound,
         };
 
-        Ok((
-            StarkConfig {
-                traces,
-                composition,
-                fri,
-                proof_of_work,
-                log_trace_domain_size: self.log_trace_domain_size()?,
-                n_queries,
-                log_n_cosets: stark.log_n_cosets,
-                n_verifier_friendly_commitment_layers,
-            },
-            self.public_input.layout.clone(),
-        ))
+        Ok(StarkConfig {
+            traces,
+            composition,
+            fri,
+            proof_of_work,
+            log_trace_domain_size: self.log_trace_domain_size()?,
+            n_queries,
+            log_n_cosets: stark.log_n_cosets,
+            n_verifier_friendly_commitment_layers,
+        })
     }
 
     fn log_trace_domain_size(&self) -> anyhow::Result<u32> {
@@ -201,7 +198,7 @@ impl ProofJSON {
             })
             .collect::<Vec<_>>();
         let layout =
-            FieldElement::from_hex_be(&prefix_hex::encode(&public_input.layout.bytes_encode()))?;
+            FieldElement::from_hex_be(&prefix_hex::encode(public_input.layout.bytes_encode()))?;
         let (padding_addr, padding_value) = match public_input.public_memory.first() {
             Some(m) => (m.address, FieldElement::from_hex_be(&m.value)?),
             None => anyhow::bail!("Invalid public memory"),
@@ -305,7 +302,7 @@ impl TryFrom<&str> for HexProof {
 impl TryFrom<ProofJSON> for StarkProof {
     type Error = anyhow::Error;
     fn try_from(value: ProofJSON) -> anyhow::Result<Self> {
-        let (config, layout) = value.stark_config()?;
+        let config = value.stark_config()?;
 
         let hex = HexProof::try_from(value.proof_hex.as_str())?;
 

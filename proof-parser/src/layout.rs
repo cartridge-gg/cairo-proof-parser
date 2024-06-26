@@ -19,7 +19,7 @@ pub enum Layout {
 }
 
 impl Layout {
-    pub fn get_consts(&self) -> LayoutConstants {
+    pub(crate) fn get_consts(&self) -> LayoutConstants {
         match self {
             Layout::Dex => LayoutConstants::dex(),
             Layout::Plain => LayoutConstants::plain(),
@@ -30,7 +30,7 @@ impl Layout {
             Layout::StarknetWithKeccak => LayoutConstants::starknet_with_keccak(),
         }
     }
-    pub fn get_dynamics_or_consts(
+    pub(crate) fn get_dynamics_or_consts(
         &self,
         dynamic_params: &Option<BTreeMap<String, BigUint>>,
     ) -> Option<LayoutConstants> {
@@ -175,7 +175,7 @@ pub fn leaves(proof_params: &ProofParameters) -> Vec<usize> {
         .fri_step_list
         .iter()
         .skip(1)
-        .map(|&x| (1u32 << x + 4) - 16)
+        .map(|&x| (1u32 << (x + 4)) - 16)
         .map(|x| x as usize)
         .collect()
 }

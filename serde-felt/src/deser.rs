@@ -16,10 +16,7 @@ pub struct Deserializer<'de> {
 
 impl<'de> Deserializer<'de> {
     pub fn peek(&self) -> Result<FieldElement> {
-        self.input
-            .first()
-            .map(|x| x.clone())
-            .ok_or(Error::NoDataLeft)
+        self.input.first().copied().ok_or(Error::NoDataLeft)
     }
 
     pub fn take(&mut self) -> Result<FieldElement> {
@@ -390,7 +387,7 @@ impl<'a, 'de> MapAccess<'de> for DeserStruct<'a, 'de> {
             return Ok(None);
         }
         let key = self.fields[self.index];
-        self.de.apply_override(&key)?;
+        self.de.apply_override(key)?;
         seed.deserialize(key.into_deserializer()).map(Some)
     }
 
