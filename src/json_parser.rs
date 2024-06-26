@@ -365,7 +365,10 @@ impl TryFrom<ProofJSON> for StarkProof {
                         "interaction_authentications",
                         vec![proof_structure.authentications], // 257
                     ),
-                    ("composition_leaves", vec![32]), // 32
+                    (
+                        "composition_leaves",
+                        vec![proof_structure.composition_leaves],
+                    ),
                     (
                         "composition_authentications",
                         vec![proof_structure.authentications], // 257

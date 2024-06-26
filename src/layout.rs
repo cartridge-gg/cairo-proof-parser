@@ -240,6 +240,7 @@ pub struct ProofStructure {
     pub layer_count: usize,
     pub composition_decommitment: usize,
     pub oods: usize,
+    pub composition_leaves: usize,
     pub last_layer_degree_bound: usize,
     pub authentications: usize,
     pub layer: Vec<usize>,
@@ -263,6 +264,8 @@ impl ProofStructure {
             oods: mask_len + layout.num_columns_second as usize - 1,
             last_layer_degree_bound: proof_params.stark.fri.last_layer_degree_bound as usize,
 
+            // https://github.com/cartridge-gg/stone-prover/blob/fd78b4db8d6a037aa467b7558ac8930c10e48dc1/src/starkware/stark/composition_oracle.cc#L288-L289
+            composition_leaves: 2 * n_queries as usize,
             authentications: authentications(),
 
             layer: leaves(proof_params),
@@ -316,6 +319,7 @@ fn test_lens() {
         composition_decommitment: 48,
         oods: 135,
         last_layer_degree_bound: 128,
+        composition_leaves: 32,
         authentications: 257,
         layer: vec![240, 240, 112],
         witness: vec![193, 129, 81],
