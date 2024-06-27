@@ -151,7 +151,12 @@ impl Layout {
     pub fn mask_len(&self) -> usize {
         match self {
             Layout::Recursive => 133,
-            _ => unimplemented!(),
+            Layout::Starknet => 271,
+            Layout::Dex => 200,
+            Layout::Plain => 49,
+            Layout::RecursiveWithPoseidon => 192,
+            Layout::Small => 201,
+            Layout::StarknetWithKeccak => 734,
         }
     }
 }
