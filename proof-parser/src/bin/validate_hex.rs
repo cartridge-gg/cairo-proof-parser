@@ -58,5 +58,7 @@ fn main() -> anyhow::Result<()> {
 
     assert_eq!(proof, proof_from_annotations);
 
+    println!("`hex_proof` is consistent with annotations.");
+
     Ok(())
 }

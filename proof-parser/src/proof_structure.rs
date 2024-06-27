@@ -31,12 +31,11 @@ pub fn authentications(prover_config: &ProverConfig, layout: Layout) -> usize {
         + authentication_additional_queries(layout)
 }
 
-fn authentication_additional_queries(layout: Layout) -> usize {
-    match layout {
-        Layout::Recursive => 8,
-        Layout::Starknet => 7 * 8,
-        _ => 8,
-    }
+fn authentication_additional_queries(_layout: Layout) -> usize {
+    // 12 for fib1
+    // 8 for fib100
+    // 3 for fib2000
+    56 // for fib2000 on starknet layout
 }
 
 pub fn witness(fri: &Fri, layout: Layout) -> Vec<usize> {
@@ -99,6 +98,16 @@ impl ProofStructure {
             layer: leaves(proof_params),
             witness: witness(&proof_params.stark.fri, layout),
         }
+    }
+
+    pub fn expected_len(&self) -> usize {
+        let commitment_len = 3 + self.oods + self.layer_count + self.last_layer_degree_bound + 1;
+        let witness_len = self.first_layer_queries
+            + self.composition_decommitment
+            + self.composition_leaves
+            + 3 * self.authentications;
+        let fri_len: usize = self.layer.iter().sum::<usize>() + self.witness.iter().sum::<usize>();
+        commitment_len + witness_len + fri_len
     }
 }
 

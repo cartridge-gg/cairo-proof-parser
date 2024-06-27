@@ -344,6 +344,8 @@ impl TryFrom<ProofJSON> for StarkProof {
 
         let hex = HexProof::try_from(value.proof_hex.as_str())?;
 
+        assert_eq!(hex.0.len(), proof_structure.expected_len());
+
         let (unsent_commitment, witness): (StarkUnsentCommitment, StarkWitness) =
             from_felts_with_lengths(
                 &hex.0,
