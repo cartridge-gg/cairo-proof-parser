@@ -338,8 +338,8 @@ impl TryFrom<ProofJSON> for StarkProof {
 
         let proof_structure = ProofStructure::new(
             &value.proof_parameters,
+            &value.prover_config,
             value.public_input.layout,
-            value.public_input.n_steps,
         );
 
         let hex = HexProof::try_from(value.proof_hex.as_str())?;

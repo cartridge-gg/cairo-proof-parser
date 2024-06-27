@@ -1,6 +1,6 @@
 use crate::{
     layout::Layout,
-    proof_params::{Fri, ProofParameters},
+    proof_params::{Fri, ProofParameters, ProverConfig},
 };
 
 // https://github.com/cartridge-gg/stone-prover/blob/fd78b4db8d6a037aa467b7558ac8930c10e48dc1/src/starkware/stark/stark.cc#L303-L304
@@ -26,8 +26,8 @@ pub fn leaves(proof_params: &ProofParameters) -> Vec<usize> {
 }
 
 // https://github.com/cartridge-gg/stone-prover/blob/fd78b4db8d6a037aa467b7558ac8930c10e48dc1/src/starkware/commitment_scheme/packaging_commitment_scheme.cc#L245-L250
-pub fn authentications() -> usize {
-    256 + authentication_additional_queries()
+pub fn authentications(prover_config: &ProverConfig) -> usize {
+    prover_config.constraint_polynomial_task_size as usize + authentication_additional_queries()
 }
 
 fn authentication_additional_queries() -> usize {
@@ -68,7 +68,11 @@ pub struct ProofStructure {
 }
 
 impl ProofStructure {
-    pub fn new(proof_params: &ProofParameters, layout: Layout, _n_steps: u32) -> Self {
+    pub fn new(
+        proof_params: &ProofParameters,
+        proof_config: &ProverConfig,
+        layout: Layout,
+    ) -> Self {
         let n_queries = proof_params.stark.fri.n_queries;
         let mask_len = layout.mask_len();
         let layout = layout.get_consts();
@@ -86,7 +90,7 @@ impl ProofStructure {
 
             // https://github.com/cartridge-gg/stone-prover/blob/fd78b4db8d6a037aa467b7558ac8930c10e48dc1/src/starkware/stark/composition_oracle.cc#L288-L289
             composition_leaves: 2 * n_queries as usize,
-            authentications: authentications(),
+            authentications: authentications(proof_config),
 
             layer: leaves(proof_params),
             witness: witness(&proof_params.stark.fri),
@@ -96,7 +100,7 @@ impl ProofStructure {
 
 #[test]
 fn test_lens() {
-    let n_steps = 16384;
+    // let n_steps = 16384;
     let layout = Layout::Recursive;
     let proof_params = ProofParameters {
         stark: crate::proof_params::Stark {
@@ -110,8 +114,13 @@ fn test_lens() {
         },
         n_verifier_friendly_commitment_layers: 0,
     };
+    let proof_config = ProverConfig {
+        constraint_polynomial_task_size: 256,
+        n_out_of_memory_merkle_layers: 1,
+        table_prover_n_tasks_per_segment: 1,
+    };
 
-    let result = ProofStructure::new(&proof_params, layout, n_steps);
+    let result = ProofStructure::new(&proof_params, &proof_config, layout);
 
     let expected = ProofStructure {
         first_layer_queries: 112,
