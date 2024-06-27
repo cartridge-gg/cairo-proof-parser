@@ -26,16 +26,20 @@ pub fn leaves(proof_params: &ProofParameters) -> Vec<usize> {
 }
 
 // https://github.com/cartridge-gg/stone-prover/blob/fd78b4db8d6a037aa467b7558ac8930c10e48dc1/src/starkware/commitment_scheme/packaging_commitment_scheme.cc#L245-L250
-pub fn authentications(prover_config: &ProverConfig) -> usize {
-    prover_config.constraint_polynomial_task_size as usize + authentication_additional_queries()
+pub fn authentications(prover_config: &ProverConfig, layout: Layout) -> usize {
+    prover_config.constraint_polynomial_task_size as usize
+        + authentication_additional_queries(layout)
 }
 
-fn authentication_additional_queries() -> usize {
-    // 1
-    8
+fn authentication_additional_queries(layout: Layout) -> usize {
+    match layout {
+        Layout::Recursive => 8,
+        Layout::Starknet => 7 * 8,
+        _ => 8,
+    }
 }
 
-pub fn witness(fri: &Fri) -> Vec<usize> {
+pub fn witness(fri: &Fri, layout: Layout) -> Vec<usize> {
     let first_fri_step = 16;
     let mut cumulative = 0;
     let mut vec = Vec::new();
@@ -50,7 +54,7 @@ pub fn witness(fri: &Fri) -> Vec<usize> {
     vec.into_iter()
         .map(|len| fri.n_queries * len)
         .map(|x| x as usize)
-        .map(|x| x + authentication_additional_queries())
+        .map(|x| x + authentication_additional_queries(layout))
         .collect()
 }
 
@@ -75,25 +79,25 @@ impl ProofStructure {
     ) -> Self {
         let n_queries = proof_params.stark.fri.n_queries;
         let mask_len = layout.mask_len();
-        let layout = layout.get_consts();
+        let consts = layout.get_consts();
 
         ProofStructure {
             // https://github.com/cartridge-gg/stone-prover/blob/fd78b4db8d6a037aa467b7558ac8930c10e48dc1/src/starkware/stark/stark.cc#L276-L277
-            first_layer_queries: (n_queries * layout.num_columns_first) as usize,
+            first_layer_queries: (n_queries * consts.num_columns_first) as usize,
 
             layer_count: proof_params.stark.fri.fri_step_list.len() - 1,
-            composition_decommitment: (n_queries * layout.num_columns_second) as usize,
+            composition_decommitment: (n_queries * consts.num_columns_second) as usize,
 
             // https://github.com/cartridge-gg/stone-prover/blob/fd78b4db8d6a037aa467b7558ac8930c10e48dc1/src/starkware/stark/oods.cc#L92-L93
-            oods: mask_len + layout.num_columns_second as usize - 1,
+            oods: mask_len + proof_params.stark.log_n_cosets as usize - 1,
             last_layer_degree_bound: proof_params.stark.fri.last_layer_degree_bound as usize,
 
             // https://github.com/cartridge-gg/stone-prover/blob/fd78b4db8d6a037aa467b7558ac8930c10e48dc1/src/starkware/stark/composition_oracle.cc#L288-L289
             composition_leaves: 2 * n_queries as usize,
-            authentications: authentications(proof_config),
+            authentications: authentications(proof_config, layout),
 
             layer: leaves(proof_params),
-            witness: witness(&proof_params.stark.fri),
+            witness: witness(&proof_params.stark.fri, layout),
         }
     }
 }
@@ -131,7 +135,8 @@ fn test_lens() {
         composition_leaves: 32,
         authentications: 256 + 8, // 257
         layer: vec![240, 240, 112],
-        witness: vec![193, 129, 81],
+        // witness: vec![193, 129, 81],
+        witness: vec![200, 136, 88],
     };
 
     assert_eq!(result, expected);
