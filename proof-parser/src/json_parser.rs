@@ -13,8 +13,9 @@ use starknet_crypto::FieldElement;
 use crate::{
     annotations::Annotations,
     builtins::Builtin,
-    layout::{Layout, ProofStructure},
+    layout::Layout,
     proof_params::{ProofParameters, ProverConfig},
+    proof_structure::ProofStructure,
     stark_proof::{
         CairoPublicInput, FriConfig, FriLayerWitness, FriUnsentCommitment, FriWitness,
         ProofOfWorkConfig, PublicMemoryCell, SegmentInfo, StarkConfig, StarkProof,
@@ -170,7 +171,7 @@ impl ProofJSON {
         Ok(layer_log_sizes)
     }
 
-    fn public_input(
+    pub fn public_input(
         public_input: PublicInput,
         // z: BigUint,
         // alpha: BigUint,
@@ -299,41 +300,49 @@ impl TryFrom<&str> for HexProof {
     }
 }
 
+pub fn proof_from_annotations(value: ProofJSON) -> anyhow::Result<StarkProof> {
+    let config = value.stark_config()?;
+
+    let annotations = Annotations::new(
+        &value
+            .annotations
+            .iter()
+            .map(String::as_str)
+            .collect::<Vec<_>>(),
+        value.proof_parameters.stark.fri.fri_step_list.len(),
+    )?;
+
+    let public_input = ProofJSON::public_input(value.public_input.clone())?;
+
+    let unsent_commitment = value.stark_unsent_commitment(&annotations);
+    let witness = ProofJSON::stark_witness(&annotations);
+
+    Ok(StarkProof {
+        config,
+        public_input,
+        unsent_commitment,
+        witness: witness.into(),
+    })
+}
+
 impl TryFrom<ProofJSON> for StarkProof {
     type Error = anyhow::Error;
     fn try_from(value: ProofJSON) -> anyhow::Result<Self> {
         let config = value.stark_config()?;
 
-        let hex = HexProof::try_from(value.proof_hex.as_str())?;
-
-        let annotations = Annotations::new(
-            &value
-                .annotations
-                .iter()
-                .map(String::as_str)
-                .collect::<Vec<_>>(),
-            value.proof_parameters.stark.fri.fri_step_list.len(),
-        )?;
         let public_input = ProofJSON::public_input(
             value.public_input.clone(),
             // annotations.z.clone(),
             // annotations.alpha.clone(),
         )?;
-        let unsent_commitment_from_annotations = value.stark_unsent_commitment(&annotations);
-        let witness_from_annotations = ProofJSON::stark_witness(&annotations);
-
-        let proof_from_annotations = StarkProof {
-            config: config.clone(),
-            public_input: public_input.clone(),
-            unsent_commitment: unsent_commitment_from_annotations,
-            witness: witness_from_annotations.into(),
-        };
 
         let proof_structure = ProofStructure::new(
             &value.proof_parameters,
             value.public_input.layout,
             value.public_input.n_steps,
         );
+
+        let hex = HexProof::try_from(value.proof_hex.as_str())?;
 
         let (unsent_commitment, witness): (StarkUnsentCommitment, StarkWitness) =
             from_felts_with_lengths(
@@ -343,24 +352,21 @@ impl TryFrom<ProofJSON> for StarkProof {
                     ("inner_layers", vec![proof_structure.layer_count]),
                     (
                         "last_layer_coefficients",
-                        vec![proof_structure.last_layer_degree_bound], // 128
+                        vec![proof_structure.last_layer_degree_bound],
                     ),
                     // WITNESS
-                    (
-                        "original_leaves",
-                        vec![proof_structure.first_layer_queries], // 112
-                    ),
+                    ("original_leaves", vec![proof_structure.first_layer_queries]),
                     (
                         "original_authentications",
-                        vec![proof_structure.authentications], // 257
+                        vec![proof_structure.authentications],
                     ),
                     (
                         "interaction_leaves",
-                        vec![proof_structure.composition_decommitment], // 48
+                        vec![proof_structure.composition_decommitment],
                     ),
                     (
                         "interaction_authentications",
-                        vec![proof_structure.authentications], // 257
+                        vec![proof_structure.authentications],
                     ),
                     (
                         "composition_leaves",
@@ -368,9 +374,9 @@ impl TryFrom<ProofJSON> for StarkProof {
                     ),
                     (
                         "composition_authentications",
-                        vec![proof_structure.authentications], // 257
+                        vec![proof_structure.authentications],
                     ),
-                    ("fri_witness", vec![proof_structure.witness.len()]), // layers
+                    ("fri_witness", vec![proof_structure.witness.len()]),
                     ("leaves", proof_structure.layer),
                     ("table_witness", proof_structure.witness),
                 ]
@@ -379,16 +385,12 @@ impl TryFrom<ProofJSON> for StarkProof {
                 .collect(),
             )?;
 
-        println!("{:?}", witness.composition_authentications);
-
         let proof = StarkProof {
             config,
             public_input,
             unsent_commitment,
             witness: witness.into(),
         };
-
-        assert_eq!(proof_from_annotations, proof);
 
         Ok(proof)
     }

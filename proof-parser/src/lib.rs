@@ -1,7 +1,5 @@
 use std::{convert::TryFrom, fmt::Display};
 
-use crate::{json_parser::ProofJSON, stark_proof::StarkProof};
-
 mod annotations;
 mod builtins;
 pub mod json_parser;
@@ -9,9 +7,11 @@ mod layout;
 pub mod output;
 pub mod program;
 mod proof_params;
+mod proof_structure;
 mod stark_proof;
 mod utils;
 
+pub use crate::{json_parser::ProofJSON, stark_proof::StarkProof};
 pub use serde_felt::to_felts;
 
 impl Display for StarkProof {

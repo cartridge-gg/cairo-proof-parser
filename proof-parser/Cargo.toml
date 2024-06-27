@@ -24,6 +24,11 @@ path = "src/bin/extract_program_hash.rs"
 name = "cairo-proof-parser-register"
 path = "src/bin/register_fact.rs"
 
+[[bin]]
+name = "cairo-proof-validate-hex"
+path = "src/bin/validate_hex.rs"
+
+
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true
