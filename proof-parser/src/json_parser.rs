@@ -336,13 +336,14 @@ impl TryFrom<ProofJSON> for StarkProof {
             // annotations.alpha.clone(),
         )?;
 
+        let hex = HexProof::try_from(value.proof_hex.as_str())?;
+
         let proof_structure = ProofStructure::new(
             &value.proof_parameters,
             &value.prover_config,
             value.public_input.layout,
+            Some(hex.0.len()),
         );
-
-        let hex = HexProof::try_from(value.proof_hex.as_str())?;
 
         assert_eq!(hex.0.len(), proof_structure.expected_len());
 
