@@ -28,6 +28,7 @@ use crate::{
 #[derive(Deserialize, Debug, Clone, PartialEq)]
 pub struct ProofJSON {
     proof_parameters: ProofParameters,
+    #[serde(default)]
     annotations: Vec<String>,
     public_input: PublicInput,
     proof_hex: String,
