@@ -1,6 +1,6 @@
 use std::io::{self, Read};
 
-use cairo_proof_parser::parse;
+use cairo_proof_parser::{parse, to_felts};
 
 fn main() -> anyhow::Result<()> {
     let mut input = String::new();
@@ -8,7 +8,8 @@ fn main() -> anyhow::Result<()> {
 
     // Parse the input as an AST
     let proof = parse(&input)?;
+    let serialized = to_felts(&proof);
 
-    println!("{proof}");
+    println!("{serialized:?}");
     Ok(())
 }

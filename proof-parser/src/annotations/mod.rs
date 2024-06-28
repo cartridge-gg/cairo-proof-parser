@@ -16,12 +16,12 @@ pub struct Annotations {
     pub fri_layers_commitments: Vec<BigUint>,
     pub fri_last_layer_coefficients: Vec<BigUint>,
     pub proof_of_work_nonce: BigUint,
-    pub original_witness_leaves: Vec<BigUint>,
-    pub original_witness_authentications: Vec<BigUint>,
-    pub interaction_witness_leaves: Vec<BigUint>,
-    pub interaction_witness_authentications: Vec<BigUint>,
-    pub composition_witness_leaves: Vec<BigUint>,
-    pub composition_witness_authentications: Vec<BigUint>,
+    pub original_leaves: Vec<BigUint>,
+    pub original_authentications: Vec<BigUint>,
+    pub interaction_leaves: Vec<BigUint>,
+    pub interaction_authentications: Vec<BigUint>,
+    pub composition_leaves: Vec<BigUint>,
+    pub composition_authentications: Vec<BigUint>,
     pub fri_witnesses: Vec<FriWitness>,
 }
 
@@ -59,16 +59,14 @@ impl Annotations {
                 .first()
                 .ok_or(anyhow::anyhow!("No ProofOfWorkNonce in annotations!"))?
                 .clone(),
-            original_witness_leaves: Annotation::OriginalWitnessLeaves.extract(annotations)?,
-            original_witness_authentications: Annotation::OriginalWitnessAuthentications
+            original_leaves: Annotation::OriginalWitnessLeaves.extract(annotations)?,
+            original_authentications: Annotation::OriginalWitnessAuthentications
                 .extract(annotations)?,
-            interaction_witness_leaves: Annotation::InteractionWitnessLeaves
+            interaction_leaves: Annotation::InteractionWitnessLeaves.extract(annotations)?,
+            interaction_authentications: Annotation::InteractionWitnessAuthentications
                 .extract(annotations)?,
-            interaction_witness_authentications: Annotation::InteractionWitnessAuthentications
-                .extract(annotations)?,
-            composition_witness_leaves: Annotation::CompositionWitnessLeaves
-                .extract(annotations)?,
-            composition_witness_authentications: Annotation::CompositionWitnessAuthentications
+            composition_leaves: Annotation::CompositionWitnessLeaves.extract(annotations)?,
+            composition_authentications: Annotation::CompositionWitnessAuthentications
                 .extract(annotations)?,
             fri_witnesses: (1..n_fri_layers)
                 .map(|i| {
