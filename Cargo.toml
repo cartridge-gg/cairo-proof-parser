@@ -1,38 +1,25 @@
-[package]
-name = "cairo-proof-parser"
-description = "Parser that translates beetwen different cairo proof formats"
+[workspace]
+resolver = "2"
+members = [
+    "proof-parser", "serde-felt",
+]
+
+[workspace.package]
+version = "0.1.0"
 edition = "2021"
-version = "0.3.0"
-license = "MIT"
-autobins = false
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[[bin]]
-name = "cairo-proof-parser-display"
-path = "src/bin/display_proof.rs"
-
-[[bin]]
-name = "cairo-proof-parser-output"
-path = "src/bin/extract_output.rs"
-
-[[bin]]
-name = "cairo-proof-parser-program"
-path = "src/bin/extract_program_hash.rs"
-
-[[bin]]
-name = "cairo-proof-parser-register"
-path = "src/bin/register_fact.rs"
-
-[dependencies]
+[workspace.dependencies]
 anyhow = "1.0.81"
 clap = { version = "4.5.4", features = ["derive"] }
 itertools = "0.12.1"
 num-bigint = { version = "0.4.4", features = ["serde"] }
+prefix-hex = "0.7.1"
 regex = "1.10.4"
 serde = { version = "1.0.197", features = ["derive"] }
 serde_json = "1.0.115"
 starknet = "0.10.0"
-starknet-crypto = "0.6.2"
+starknet-crypto = { version = "0.6.2", features = ["alloc"] }
 tokio = { version = "1.37.0", features = ["full"] }
 url = "2.5.0"
+serde-felt = { path = "./serde-felt" }
+starknet-ff = "0.3.7"

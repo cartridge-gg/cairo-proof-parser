@@ -4,7 +4,7 @@ use num_bigint::BigUint;
 use serde::Deserialize;
 
 // For now only the recursive and starknet layouts is supported
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Layout {
     Dex,
@@ -17,7 +17,7 @@ pub enum Layout {
 }
 
 impl Layout {
-    pub fn get_consts(&self) -> LayoutConstants {
+    pub(crate) fn get_consts(&self) -> LayoutConstants {
         match self {
             Layout::Dex => LayoutConstants::dex(),
             Layout::Plain => LayoutConstants::plain(),
@@ -28,7 +28,7 @@ impl Layout {
             Layout::StarknetWithKeccak => LayoutConstants::starknet_with_keccak(),
         }
     }
-    pub fn get_dynamics_or_consts(
+    pub(crate) fn get_dynamics_or_consts(
         &self,
         dynamic_params: &Option<BTreeMap<String, BigUint>>,
     ) -> Option<LayoutConstants> {
@@ -142,6 +142,21 @@ impl LayoutConstants {
             cpu_component_step: 1,
             num_columns_first: 21,
             num_columns_second: 1,
+        }
+    }
+}
+
+impl Layout {
+    // https://github.com/cartridge-gg/stone-prover/blob/fd78b4db8d6a037aa467b7558ac8930c10e48dc1/src/starkware/air/cpu/board/cpu_air_definition4.inl#L1775-L1776
+    pub fn mask_len(&self) -> usize {
+        match self {
+            Layout::Recursive => 133,
+            Layout::Starknet => 271,
+            Layout::Dex => 200,
+            Layout::Plain => 49,
+            Layout::RecursiveWithPoseidon => 192,
+            Layout::Small => 201,
+            Layout::StarknetWithKeccak => 734,
         }
     }
 }

@@ -1,0 +1,45 @@
+[package]
+name = "cairo-proof-parser"
+description = "Parser that translates beetwen different cairo proof formats"
+version.workspace = true
+edition.workspace = true
+license = "MIT"
+autobins = false
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+name = "cairo-proof-parser-display"
+path = "src/bin/display_proof.rs"
+
+[[bin]]
+name = "cairo-proof-parser-output"
+path = "src/bin/extract_output.rs"
+
+[[bin]]
+name = "cairo-proof-parser-program"
+path = "src/bin/extract_program_hash.rs"
+
+[[bin]]
+name = "cairo-proof-parser-register"
+path = "src/bin/register_fact.rs"
+
+[[bin]]
+name = "cairo-proof-validate-hex"
+path = "src/bin/validate_hex.rs"
+
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+itertools.workspace = true
+num-bigint.workspace = true
+prefix-hex.workspace = true
+regex.workspace = true
+serde.workspace = true
+serde-felt.workspace = true
+serde_json.workspace = true
+starknet.workspace = true
+starknet-crypto.workspace = true
+tokio.workspace = true
+url.workspace = true

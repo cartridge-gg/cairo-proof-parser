@@ -4,6 +4,7 @@ use cairo_proof_parser::{
     program::{extract_program, ExtractProgramResult},
 };
 use clap::Parser;
+use serde_felt::to_felts;
 use starknet::accounts::ConnectedAccount;
 use starknet::accounts::{Account, Call, ExecutionEncoding, SingleOwnerAccount};
 use starknet::core::types::{
@@ -70,10 +71,10 @@ async fn main() -> anyhow::Result<()> {
 
     let expected_fact = poseidon_hash_many(&[program_hash, program_output_hash]);
 
-    let serialized_proof: Vec<FieldElement> = parse(&input)?.into();
+    let serialized_proof = to_felts(&parse(&input)?)?;
     let tx = verify_and_register_fact(account, serialized_proof).await?;
     println!("tx: {tx}");
-    println!("expected_fact: {}", expected_fact.to_string());
+    println!("expected_fact: {}", expected_fact);
 
     Ok(())
 }
