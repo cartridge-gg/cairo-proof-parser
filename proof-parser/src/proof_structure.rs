@@ -143,6 +143,8 @@ impl ProofStructure {
 
 #[test]
 fn test_lens() {
+    use crate::proof_params::Fri;
+
     // let n_steps = 16384;
     let layout = Layout::Recursive;
     let proof_params = ProofParameters {

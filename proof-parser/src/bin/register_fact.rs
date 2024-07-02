@@ -8,7 +8,7 @@ use serde_felt::to_felts;
 use starknet::accounts::ConnectedAccount;
 use starknet::accounts::{Account, Call, ExecutionEncoding, SingleOwnerAccount};
 use starknet::core::types::{
-    BlockId, BlockTag, FieldElement, TransactionExecutionStatus, TransactionStatus,
+    BlockId, BlockTag, Felt, TransactionExecutionStatus, TransactionStatus,
 };
 use starknet::core::utils::get_selector_from_name;
 use starknet::providers::jsonrpc::HttpTransport;
@@ -37,20 +37,18 @@ struct Cli {
 async fn main() -> anyhow::Result<()> {
     let args = Cli::parse(); // Automatically parse command line arguments
 
-    let address = FieldElement::from_hex_be(&args.address).expect("Invalid signer address hex");
-    let key = SigningKey::from_secret_scalar(
-        FieldElement::from_hex_be(&args.key).expect("Invalid signer key hex"),
-    );
+    let address = Felt::from_hex(&args.address).expect("Invalid signer address hex");
+    let key =
+        SigningKey::from_secret_scalar(Felt::from_hex(&args.key).expect("Invalid signer key hex"));
 
     // Setup StarkNet provider and wallet
     let provider = JsonRpcClient::new(HttpTransport::new(
         Url::parse("https://free-rpc.nethermind.io/sepolia-juno/v0_7").unwrap(),
     ));
     let signer = LocalWallet::from(key);
-    let chain_id = FieldElement::from_hex_be(
-        "0x00000000000000000000000000000000000000000000534e5f5345504f4c4941",
-    )
-    .unwrap();
+    let chain_id =
+        Felt::from_hex("0x00000000000000000000000000000000000000000000534e5f5345504f4c4941")
+            .unwrap();
     let mut account =
         SingleOwnerAccount::new(provider, signer, address, chain_id, ExecutionEncoding::New);
     account.set_block_id(BlockId::Tag(BlockTag::Pending));
@@ -81,14 +79,12 @@ async fn main() -> anyhow::Result<()> {
 
 async fn verify_and_register_fact(
     account: SingleOwnerAccount<JsonRpcClient<HttpTransport>, LocalWallet>,
-    serialized_proof: Vec<FieldElement>,
+    serialized_proof: Vec<Felt>,
 ) -> anyhow::Result<String> {
     let tx = account
-        .execute(vec![Call {
-            to: FieldElement::from_hex_be(
-                "0x282969f3212819740d03929f52c709bc62f4c2ce8c17b5f24bd835a03cca22",
-            )
-            .expect("invalid world address"),
+        .execute_v1(vec![Call {
+            to: Felt::from_hex("0x282969f3212819740d03929f52c709bc62f4c2ce8c17b5f24bd835a03cca22")
+                .expect("invalid world address"),
             selector: get_selector_from_name("verify_and_register_fact").expect("invalid selector"),
             calldata: serialized_proof,
         }])

@@ -2,31 +2,31 @@ use std::collections::HashMap;
 
 use serde::de::{self, DeserializeSeed, IntoDeserializer, MapAccess, SeqAccess, Visitor};
 use serde::Deserialize;
-use starknet_crypto::FieldElement;
+use starknet_types_core::felt::Felt;
 
 use super::error::{Error, Result};
 
 pub type Lengths = HashMap<String, Vec<usize>>;
 
 pub struct Deserializer<'de> {
-    input: &'de [FieldElement],
+    input: &'de [Felt],
     lengths: Option<Lengths>, // Workaround around serde limit to 32 element tuples.
     next_length: Option<usize>,
 }
 
 impl<'de> Deserializer<'de> {
-    pub fn peek(&self) -> Result<FieldElement> {
+    pub fn peek(&self) -> Result<Felt> {
         self.input.first().copied().ok_or(Error::NoDataLeft)
     }
 
-    pub fn take(&mut self) -> Result<FieldElement> {
+    pub fn take(&mut self) -> Result<Felt> {
         let el = self.peek()?;
         self.input = &self.input[1..];
 
         Ok(el)
     }
 
-    pub fn from_felts(input: &'de Vec<FieldElement>) -> Self {
+    pub fn from_felts(input: &'de Vec<Felt>) -> Self {
         Deserializer {
             input,
             lengths: None,
@@ -34,7 +34,7 @@ impl<'de> Deserializer<'de> {
         }
     }
 
-    pub fn from_felts_with_lengths(input: &'de Vec<FieldElement>, lengths: Lengths) -> Self {
+    pub fn from_felts_with_lengths(input: &'de Vec<Felt>, lengths: Lengths) -> Self {
         Deserializer {
             input,
             lengths: Some(lengths),
@@ -67,21 +67,21 @@ impl<'de> Deserializer<'de> {
     }
 }
 
-pub fn from_felts<'a, T>(s: &'a Vec<FieldElement>) -> Result<T>
+pub fn from_felts<'a, T>(s: &'a Vec<Felt>) -> Result<T>
 where
     T: Deserialize<'a>,
 {
     from_felts_inner(s, None)
 }
 
-pub fn from_felts_with_lengths<'a, T>(s: &'a Vec<FieldElement>, lengths: Lengths) -> Result<T>
+pub fn from_felts_with_lengths<'a, T>(s: &'a Vec<Felt>, lengths: Lengths) -> Result<T>
 where
     T: Deserialize<'a>,
 {
     from_felts_inner(s, Some(lengths))
 }
 
-fn from_felts_inner<'a, T>(s: &'a Vec<FieldElement>, lengths: Option<Lengths>) -> Result<T>
+fn from_felts_inner<'a, T>(s: &'a Vec<Felt>, lengths: Option<Lengths>) -> Result<T>
 where
     T: Deserialize<'a>,
 {

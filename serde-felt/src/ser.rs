@@ -1,10 +1,10 @@
 use serde::{ser, Serialize};
-use starknet_crypto::FieldElement;
+use starknet_types_core::felt::Felt;
 
 use super::error::{Error, Result};
 
 pub struct Serializer {
-    output: Vec<FieldElement>,
+    output: Vec<Felt>,
 }
 
 pub struct SeqSerializer<'a> {
@@ -12,7 +12,7 @@ pub struct SeqSerializer<'a> {
     len_index: usize,
 }
 
-pub fn to_felts<T>(value: &T) -> Result<Vec<FieldElement>>
+pub fn to_felts<T>(value: &T) -> Result<Vec<Felt>>
 where
     T: Serialize,
 {
@@ -68,7 +68,7 @@ impl<'a> ser::Serializer for &'a mut Serializer {
     }
 
     fn serialize_u64(self, v: u64) -> Result<()> {
-        self.output.push(FieldElement::from(v));
+        self.output.push(Felt::from(v));
         Ok(())
     }
 
@@ -85,7 +85,7 @@ impl<'a> ser::Serializer for &'a mut Serializer {
     }
 
     fn serialize_str(self, v: &str) -> Result<()> {
-        let felt = FieldElement::from_dec_str(v).map_err(|_| Error::UnparsableString)?;
+        let felt = Felt::from_dec_str(v).map_err(|_| Error::UnparsableString)?;
         self.output.push(felt);
         Ok(())
     }
@@ -152,7 +152,7 @@ impl<'a> ser::Serializer for &'a mut Serializer {
     fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq> {
         let len = len.ok_or(Error::LengthNotKnownAtSerialization)?;
         let len_index = self.output.len();
-        self.output.push(FieldElement::from(len)); // This is later overwritten with the actual length
+        self.output.push(Felt::from(len)); // This is later overwritten with the actual length
 
         Ok(SeqSerializer {
             se: self,
@@ -215,8 +215,7 @@ impl<'a> ser::SerializeSeq for SeqSerializer<'a> {
     }
 
     fn end(self) -> Result<()> {
-        self.se.output[self.len_index] =
-            FieldElement::from(self.se.output.len() - self.len_index - 1);
+        self.se.output[self.len_index] = Felt::from(self.se.output.len() - self.len_index - 1);
         Ok(())
     }
 }
