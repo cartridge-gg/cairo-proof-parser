@@ -1,4 +1,5 @@
-use starknet_crypto::{poseidon_hash_many, FieldElement};
+use starknet_crypto::poseidon_hash_many;
+use starknet_types_core::felt::Felt;
 use std::collections::HashMap;
 use std::convert::TryInto;
 
@@ -7,8 +8,8 @@ use crate::parse_raw;
 const OUTPUT_SEGMENT_OFFSET: usize = 2;
 
 pub struct ExtractOutputResult {
-    pub program_output: Vec<FieldElement>,
-    pub program_output_hash: FieldElement,
+    pub program_output: Vec<Felt>,
+    pub program_output_hash: Felt,
 }
 
 pub fn extract_output(input: &str) -> anyhow::Result<ExtractOutputResult> {
@@ -31,16 +32,14 @@ pub fn extract_output(input: &str) -> anyhow::Result<ExtractOutputResult> {
             .chain(value_bytes.iter())
             .copied()
             .collect::<Vec<u8>>();
-        let field_element = FieldElement::from_bytes_be(
-            &padded_value.try_into().expect("Failed to convert to array"),
-        )
-        .expect("Failed to convert to FieldElement");
+        let field_element =
+            Felt::from_bytes_be(&padded_value.try_into().expect("Failed to convert to array"));
 
         main_page_map.insert(element.address, field_element);
     }
 
     // Extract program output using the address range in the output segment
-    let program_output: Vec<FieldElement> = (output_segment.begin_addr..output_segment.stop_ptr)
+    let program_output: Vec<Felt> = (output_segment.begin_addr..output_segment.stop_ptr)
         .map(|addr| {
             *main_page_map
                 .get(&addr)

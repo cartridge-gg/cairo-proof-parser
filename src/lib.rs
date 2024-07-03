@@ -14,7 +14,7 @@ mod utils;
 
 pub use ast::{Expr, Exprs};
 use itertools::chain;
-use starknet_crypto::FieldElement;
+use starknet_types_core::felt::Felt;
 
 #[derive(Debug)]
 pub struct ParseStarkProof {
@@ -23,13 +23,13 @@ pub struct ParseStarkProof {
     pub unsent_commitment: Exprs,
     pub witness: Exprs,
 }
-impl Into<Vec<FieldElement>> for ParseStarkProof {
-    fn into(self) -> Vec<FieldElement> {
+impl Into<Vec<Felt>> for ParseStarkProof {
+    fn into(self) -> Vec<Felt> {
         chain![
-            <Exprs as Into<Vec<FieldElement>>>::into(self.config),
-            <Exprs as Into<Vec<FieldElement>>>::into(self.public_input),
-            <Exprs as Into<Vec<FieldElement>>>::into(self.unsent_commitment),
-            <Exprs as Into<Vec<FieldElement>>>::into(self.witness),
+            <Exprs as Into<Vec<Felt>>>::into(self.config),
+            <Exprs as Into<Vec<Felt>>>::into(self.public_input),
+            <Exprs as Into<Vec<Felt>>>::into(self.unsent_commitment),
+            <Exprs as Into<Vec<Felt>>>::into(self.witness),
         ]
         .collect()
     }

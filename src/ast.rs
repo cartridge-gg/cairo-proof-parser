@@ -3,21 +3,21 @@ use std::{
     ops::{Deref, DerefMut},
 };
 
-use starknet_crypto::FieldElement;
+use starknet_types_core::felt::Felt;
 
 #[derive(Debug, Clone)]
 pub enum Expr {
     Value(String),
     Array(Vec<Expr>),
 }
-impl Into<Vec<FieldElement>> for Expr {
-    fn into(self) -> Vec<FieldElement> {
+impl Into<Vec<Felt>> for Expr {
+    fn into(self) -> Vec<Felt> {
         match self {
-            Expr::Value(v) => vec![FieldElement::from_dec_str(&v).unwrap()],
-            Expr::Array(v) => std::iter::once(FieldElement::from(v.len()))
+            Expr::Value(v) => vec![Felt::from_dec_str(&v).unwrap()],
+            Expr::Array(v) => std::iter::once(Felt::from(v.len()))
                 .chain(
                     v.into_iter()
-                        .flat_map(|x| <Expr as Into<Vec<FieldElement>>>::into(x)),
+                        .flat_map(|x| <Expr as Into<Vec<Felt>>>::into(x)),
                 )
                 .collect(),
         }
@@ -41,10 +41,10 @@ impl Display for Expr {
 
 #[derive(Debug, Clone)]
 pub struct Exprs(pub Vec<Expr>);
-impl Into<Vec<FieldElement>> for Exprs {
-    fn into(self) -> Vec<FieldElement> {
+impl Into<Vec<Felt>> for Exprs {
+    fn into(self) -> Vec<Felt> {
         self.iter()
-            .flat_map(|x| <Expr as Into<Vec<FieldElement>>>::into(x.to_owned()))
+            .flat_map(|x| <Expr as Into<Vec<Felt>>>::into(x.to_owned()))
             .collect()
     }
 }
