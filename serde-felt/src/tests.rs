@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use starknet_ff::FieldElement;
+use starknet_types_core::felt::Felt;
 
 use crate::{from_felts, from_felts_with_lengths, to_felts};
 
@@ -7,27 +7,27 @@ use super::error::Result;
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 struct Basic {
-    a: FieldElement,
-    b: FieldElement,
+    a: Felt,
+    b: Felt,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 struct Nested {
-    a: FieldElement,
+    a: Felt,
     b: Basic,
-    c: FieldElement,
+    c: Felt,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 struct WithSequence {
-    a: Vec<FieldElement>,
-    b: FieldElement,
+    a: Vec<Felt>,
+    b: Felt,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 struct WithArray {
-    a: [FieldElement; 2],
-    b: FieldElement,
+    a: [Felt; 2],
+    b: Felt,
 }
 
 #[test]

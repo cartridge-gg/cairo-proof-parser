@@ -5,5 +5,4 @@ edition.workspace = true
 
 [dependencies]
 serde.workspace = true
-starknet-crypto.workspace = true
-starknet-ff.workspace = true
+starknet-types-core.workspace = true
