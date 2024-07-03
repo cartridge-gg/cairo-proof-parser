@@ -224,7 +224,8 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        visitor.visit_string(self.take()?.to_string())
+        let hex = format!("{:#x}", self.take()?);
+        visitor.visit_string(hex)
     }
 
     fn deserialize_string<V>(self, visitor: V) -> Result<V::Value>

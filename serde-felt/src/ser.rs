@@ -85,7 +85,7 @@ impl<'a> ser::Serializer for &'a mut Serializer {
     }
 
     fn serialize_str(self, v: &str) -> Result<()> {
-        let felt = Felt::from_dec_str(v).map_err(|_| Error::UnparsableString)?;
+        let felt = Felt::from_hex(v).map_err(|_| Error::UnparsableString)?;
         self.output.push(felt);
         Ok(())
     }
