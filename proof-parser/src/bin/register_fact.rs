@@ -44,7 +44,8 @@ async fn main() -> anyhow::Result<()> {
 
     // Setup StarkNet provider and wallet
     let provider = JsonRpcClient::new(HttpTransport::new(
-        Url::parse("https://free-rpc.nethermind.io/sepolia-juno/v0_7").unwrap(),
+        Url::parse("https://starknet-sepolia.g.alchemy.com/v2/PovJ0plog8O9RxyaPMYAZiKHqZ5LLII_")
+            .unwrap(),
     ));
     let signer = LocalWallet::from(key);
     let chain_id = FieldElement::from_hex_be(
@@ -59,21 +60,34 @@ async fn main() -> anyhow::Result<()> {
     let mut input = String::new();
     io::stdin().read_to_string(&mut input)?;
 
+    println!("Before extract_program");
+
     let ExtractProgramResult {
         program: _,
         program_hash,
     } = extract_program(&input).unwrap();
+
+    println!("Before extract_output");
 
     let ExtractOutputResult {
         program_output: _,
         program_output_hash,
     } = extract_output(&input).unwrap();
 
-    let expected_fact = poseidon_hash_many(&[program_hash, program_output_hash]);
+    println!("Before verify_and_register_fact");
 
-    let serialized_proof = to_felts(&parse(&input)?)?;
+    let parsed = parse(&input)?;
+
+    println!("parsed: ",);
+
+    let mut serialized_proof = to_felts(&parsed)?;
+
+    println!("serialized_proof: ",);
+
+    serialized_proof.push(1u64.into());
     let tx = verify_and_register_fact(account, serialized_proof).await?;
     println!("tx: {tx}");
+    let expected_fact = poseidon_hash_many(&[program_hash, program_output_hash]);
     println!("expected_fact: {}", expected_fact);
 
     Ok(())
@@ -83,16 +97,17 @@ async fn verify_and_register_fact(
     account: SingleOwnerAccount<JsonRpcClient<HttpTransport>, LocalWallet>,
     serialized_proof: Vec<FieldElement>,
 ) -> anyhow::Result<String> {
+    println!("Sending transaction...");
     let tx = account
         .execute(vec![Call {
             to: FieldElement::from_hex_be(
-                "0x282969f3212819740d03929f52c709bc62f4c2ce8c17b5f24bd835a03cca22",
+                "0x72e5a88de0034b57ccceda06a602a375cd2fc7d581dcd17b2be7b3d66c05c81",
             )
             .expect("invalid world address"),
             selector: get_selector_from_name("verify_and_register_fact").expect("invalid selector"),
             calldata: serialized_proof,
         }])
-        .max_fee(starknet::macros::felt!("1000000000000000")) // sometimes failing without this line
+        .max_fee(starknet::macros::felt!("10000000000000000000000")) // sometimes failing without this line
         .send()
         .await?;
 
