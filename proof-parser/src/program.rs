@@ -51,11 +51,8 @@ pub fn extract_program(input: &str) -> anyhow::Result<ExtractProgramResult> {
 
     // Extract program bytecode using the address range in the segments
     let program: Vec<Felt> = (initial_pc..(initial_fp - initial_pc - 1))
-        .map(|addr| {
-            *main_page_map
-                .get(&addr)
-                .expect("Address not found in main page map")
-        })
+        .filter_map(|addr| main_page_map.get(&addr))
+        .map(|fe| *fe)
         .collect();
 
     // Calculate the Poseidon hash of the program output
