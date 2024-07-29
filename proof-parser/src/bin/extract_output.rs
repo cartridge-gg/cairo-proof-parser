@@ -1,4 +1,5 @@
-use cairo_proof_parser::output::{extract_output, ExtractOutputResult};
+use anyhow::Context;
+use cairo_proof_parser::{output::ExtractOutputResult, StarkProof};
 use std::io::{self, Read};
 
 fn main() -> anyhow::Result<()> {
@@ -6,10 +7,12 @@ fn main() -> anyhow::Result<()> {
     let mut input = String::new();
     io::stdin().read_to_string(&mut input)?;
 
+    let proof = StarkProof::try_from(&input[..]).context("Failed to parse proof")?;
+
     let ExtractOutputResult {
         program_output,
         program_output_hash,
-    } = extract_output(&input).unwrap();
+    } = proof.extract_output().unwrap();
 
     let program_output_display: Vec<String> = program_output
         .iter()

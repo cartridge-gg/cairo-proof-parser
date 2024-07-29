@@ -147,7 +147,7 @@ fn test_lens() {
     let layout = Layout::Recursive;
     let proof_params = ProofParameters {
         stark: crate::proof_params::Stark {
-            fri: Fri {
+            fri: crate::proof_params::Fri {
                 fri_step_list: vec![0, 4, 4, 3],
                 last_layer_degree_bound: 128,
                 n_queries: 16,
@@ -172,10 +172,9 @@ fn test_lens() {
         oods: 135,
         last_layer_degree_bound: 128,
         composition_leaves: 32,
-        authentications: 256 + 8, // 257
+        authentications: 256,
         layer: vec![240, 240, 112],
-        // witness: vec![193, 129, 81],
-        witness: vec![200, 136, 88],
+        witness: vec![192, 128, 80],
     };
 
     assert_eq!(result, expected);
