@@ -1,6 +1,6 @@
-use cairo_proof_parser::output::{extract_output, ExtractOutputResult};
-use cairo_proof_parser::parse;
-use cairo_proof_parser::program::{extract_program, ExtractProgramResult};
+use anyhow::Context;
+
+use cairo_proof_parser::StarkProof;
 use clap::Parser;
 use itertools::Itertools;
 use serde_felt::to_felts;
@@ -22,6 +22,7 @@ use url::Url;
 
 const FACT_REGISTRY: &str = "0x18c9ffecaf64edf3f10ee150272c870251436d1a9c0e2c8b14491da589a2b3f";
 const RPC_URL: &str = "https://starknet-sepolia.g.alchemy.com/starknet/version/rpc/v0_7/PovJ0plog8O9RxyaPMYAZiKHqZ5LLII_";
+const FEE_MULTIPLIER: f64 = 2.0;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -33,6 +34,9 @@ struct Cli {
     /// The private key of the signer in hexadecimal.
     #[clap(short, long, value_parser)]
     key: String,
+
+    #[clap(short, long, value_parser)]
+    store_proof: bool,
 }
 
 #[tokio::main]
@@ -59,39 +63,24 @@ async fn main() -> anyhow::Result<()> {
     let mut input = String::new();
     io::stdin().read_to_string(&mut input)?;
 
-    println!("Before extract_program");
+    let proof = StarkProof::try_from(&input[..]).context("Failed to parse proof")?;
+    let program_hash = proof.extract_program().unwrap().program_hash;
+    let output_hash = proof.extract_output().unwrap().program_output_hash;
 
-    let ExtractProgramResult {
-        program: _,
-        program_hash,
-    } = extract_program(&input).unwrap();
-
-    println!("Before extract_output");
-
-    let ExtractOutputResult {
-        program_output: _,
-        program_output_hash,
-    } = extract_output(&input).unwrap();
-
-    println!("Before verify_and_register_fact");
-
-    let parsed = parse(&input)?;
-
-    let serialized_proof = to_felts(&parsed)?;
-    println!("serialized_proof: {}", serialized_proof.len());
+    let serialized_proof = to_felts(&proof)?;
 
     let mut nonce = account.get_nonce().await?;
-
     let mut hashes = vec![];
 
-    for fragment in serialized_proof.into_iter().chunks(1500).into_iter() {
+    for fragment in serialized_proof.into_iter().chunks(2000).into_iter() {
         let mut fragment: Vec<FieldElement> = fragment.collect();
         let hash = poseidon_hash_many(&fragment);
         hashes.push(hash);
 
         fragment.insert(0, fragment.len().into());
 
-        // File::create(format!("proof_{nonce}_{hash}.txt"))?.write_all(
+        // io::Write::write_all(
+        //     &mut std::fs::File::create(format!("proof_{nonce}_{hash}.txt"))?,
         //     fragment
         //         .iter()
         //         .map(|x| format!("{x}"))
@@ -100,7 +89,9 @@ async fn main() -> anyhow::Result<()> {
         //         .as_bytes(),
         // )?;
 
-        let _ = publish_fragment(&account, nonce, fragment).await?;
+        let tx = publish_fragment(&account, nonce, fragment).await?;
+        println!("Publish transaction: {tx:#x} .");
+
         nonce += 1u64.into();
     }
 
@@ -110,12 +101,11 @@ async fn main() -> anyhow::Result<()> {
         .chain(vec![1u64.into()].into_iter())
         .collect::<Vec<FieldElement>>();
 
-    println!("Registering Fact");
-
     let tx = verify_and_register_fact(account, calldata, nonce).await?;
-    println!("tx: {tx}");
-    let expected_fact = poseidon_hash_many(&[program_hash, program_output_hash]);
-    println!("expected_fact: {}", expected_fact);
+    println!("Verify transaction: {:#x} .", tx);
+
+    let expected_fact = poseidon_hash_many(&[program_hash, output_hash]);
+    println!("Expected fact: {:#x}", expected_fact);
 
     Ok(())
 }
@@ -132,20 +122,20 @@ async fn publish_fragment(
             calldata: serialized_proof,
         }])
         .nonce(nonce)
-        .max_fee(starknet::macros::felt!("20787888426336769")) // sometimes failing without this line
+        .fee_estimate_multiplier(FEE_MULTIPLIER)
         .send()
         .await?;
 
-    wait_for(account, tx).await?;
+    wait_for(account, tx.clone()).await?;
 
-    Ok(0u64.into())
+    Ok(tx.transaction_hash)
 }
 
 async fn verify_and_register_fact(
     account: SingleOwnerAccount<JsonRpcClient<HttpTransport>, LocalWallet>,
     serialized_proof: Vec<FieldElement>,
     nonce: FieldElement,
-) -> anyhow::Result<String> {
+) -> anyhow::Result<FieldElement> {
     println!("Sending transaction...");
     let tx = account
         .execute(vec![Call {
@@ -155,7 +145,7 @@ async fn verify_and_register_fact(
             calldata: serialized_proof,
         }])
         .nonce(nonce)
-        .max_fee(starknet::macros::felt!("20787888426336769")) // sometimes failing without this line
+        .fee_estimate_multiplier(FEE_MULTIPLIER)
         .send()
         .await?;
 
@@ -165,9 +155,7 @@ async fn verify_and_register_fact(
 async fn wait_for(
     account: &SingleOwnerAccount<JsonRpcClient<HttpTransport>, LocalWallet>,
     tx: InvokeTransactionResult,
-) -> anyhow::Result<String> {
-    println!("tx hash: {:#x}", tx.transaction_hash);
-
+) -> anyhow::Result<FieldElement> {
     let start_fetching = std::time::Instant::now();
     let wait_for = Duration::from_secs(360);
     let execution_status = loop {
@@ -210,17 +198,5 @@ async fn wait_for(
         }
     }
 
-    Ok(format!("{:#x}", tx.transaction_hash))
-}
-
-#[test]
-fn assert_the_same_poseidon() {
-    let to_hash = vec![1u64.into()];
-    let result = poseidon_hash_many(&to_hash);
-    let expected = FieldElement::from_hex_be(
-        "0x579e8877c7755365d5ec1ec7d3a94a457eff5d1f40482bbe9729c064cdead2",
-    )
-    .unwrap();
-
-    assert_eq!(result, expected);
+    Ok(tx.transaction_hash)
 }

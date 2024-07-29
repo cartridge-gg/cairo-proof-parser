@@ -35,9 +35,3 @@ pub fn parse(input: &str) -> anyhow::Result<StarkProof> {
 
     Ok(stark_proof)
 }
-
-pub fn parse_raw(input: &str) -> anyhow::Result<StarkProof> {
-    let proof_json = serde_json::from_str::<ProofJSON>(input)?;
-    let stark_proof = StarkProof::try_from(proof_json)?;
-    Ok(stark_proof)
-}

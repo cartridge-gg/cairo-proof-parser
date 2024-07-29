@@ -1,66 +1,57 @@
 use starknet_crypto::{poseidon_hash_many, FieldElement};
 use std::collections::HashMap;
-use std::convert::TryInto;
 
-use crate::parse_raw;
+use crate::StarkProof;
 
 const PROGRAM_SEGMENT_OFFSET: usize = 0;
-const EXECUTION_SEGMENT_OFFSET: usize = 1;
+const OUTPUT_SEGMENT_OFFSET: usize = 2;
 
 pub struct ExtractProgramResult {
     pub program: Vec<FieldElement>,
     pub program_hash: FieldElement,
 }
 
-pub fn extract_program(input: &str) -> anyhow::Result<ExtractProgramResult> {
-    // Parse the input string into a proof structure
-    let proof = parse_raw(input)?;
+impl StarkProof {
+    pub fn extract_program(&self) -> anyhow::Result<ExtractProgramResult> {
+        // Retrieve the program segment from the proof
+        let program_segment = self
+            .public_input
+            .segments
+            .get(PROGRAM_SEGMENT_OFFSET)
+            .ok_or_else(|| anyhow::Error::msg("Program segment not found"))?;
 
-    // Retrieve the program segment from the proof
-    let program_segment = proof
-        .public_input
-        .segments
-        .get(PROGRAM_SEGMENT_OFFSET)
-        .ok_or_else(|| anyhow::Error::msg("Program segment not found"))?;
+        let output_segment = self
+            .public_input
+            .segments
+            .get(OUTPUT_SEGMENT_OFFSET)
+            .ok_or_else(|| anyhow::Error::msg("Execution segment not found"))?;
+        let output_len = output_segment.stop_ptr - output_segment.begin_addr;
 
-    // Retrieve the execution segment from the proof
-    let execution_segment = proof
-        .public_input
-        .segments
-        .get(EXECUTION_SEGMENT_OFFSET)
-        .ok_or_else(|| anyhow::Error::msg("Execution segment not found"))?;
+        // Extract program bytecode using the address range in the segments
+        // Based on https://github.com/HerodotusDev/integrity/blob/bca869260c0c5d26bb18391356b095feb548aae5/src/air/public_input.cairo#L178-L179.
+        let initial_pc = program_segment.begin_addr;
+        let start = initial_pc + 1;
+        let end = start + self.public_input.main_page.len() as u32 - output_len;
 
-    // Construct a map for the main page elements
-    let mut main_page_map = HashMap::new();
-    for element in &proof.public_input.main_page {
-        let value_bytes = element.value.to_bytes_be();
-        let padded_value = vec![0u8; 32 - value_bytes.len()]
+        // Construct a map for the main page elements
+        let main_page_map = self
+            .public_input
+            .main_page
             .iter()
-            .chain(value_bytes.iter())
-            .copied()
-            .collect::<Vec<u8>>();
-        let field_element = FieldElement::from_bytes_be(
-            &padded_value.try_into().expect("Failed to convert to array"),
-        )
-        .expect("Failed to convert to FieldElement");
+            .filter(|el| el.address >= start && el.address < end)
+            .map(|el| (el.address, el.value))
+            .collect::<HashMap<u32, FieldElement>>();
 
-        main_page_map.insert(element.address, field_element);
+        let program: Vec<FieldElement> = (start..end)
+            .map(|addr| *main_page_map.get(&addr).unwrap_or(&FieldElement::ZERO))
+            .collect();
+
+        // Calculate the Poseidon hash of the program output
+        let program_hash = poseidon_hash_many(&program);
+
+        Ok(ExtractProgramResult {
+            program,
+            program_hash,
+        })
     }
-
-    let initial_pc = program_segment.begin_addr;
-    let initial_fp = execution_segment.begin_addr;
-
-    // Extract program bytecode using the address range in the segments
-    let program: Vec<FieldElement> = (initial_pc..(initial_fp - initial_pc - 1))
-        .filter_map(|addr| main_page_map.get(&addr))
-        .map(|fe| *fe)
-        .collect();
-
-    // Calculate the Poseidon hash of the program output
-    let program_hash = poseidon_hash_many(&program);
-
-    Ok(ExtractProgramResult {
-        program,
-        program_hash,
-    })
 }
