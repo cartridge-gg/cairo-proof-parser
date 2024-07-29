@@ -77,15 +77,17 @@ async fn main() -> anyhow::Result<()> {
 
         fragment.insert(0, fragment.len().into());
 
-        // io::Write::write_all(
-        //     &mut std::fs::File::create(format!("proof_{nonce}_{hash}.txt"))?,
-        //     fragment
-        //         .iter()
-        //         .map(|x| format!("{x}"))
-        //         .collect::<Vec<_>>()
-        //         .join(" ")
-        //         .as_bytes(),
-        // )?;
+        if args.store_proof {
+            io::Write::write_all(
+                &mut std::fs::File::create(format!("proof_{nonce}_{hash}.txt"))?,
+                fragment
+                    .iter()
+                    .map(|x| format!("{x}"))
+                    .collect::<Vec<_>>()
+                    .join(" ")
+                    .as_bytes(),
+            )?;
+        }
 
         let tx = publish_fragment(&account, nonce, fragment).await?;
         println!("Publish transaction: {tx:#x} .");
