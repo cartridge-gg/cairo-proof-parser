@@ -4,6 +4,7 @@ use starknet_crypto::FieldElement;
 use super::error::{Error, Result};
 
 pub struct Serializer {
+    options: SerializerOptions,
     output: Vec<FieldElement>,
 }
 
@@ -12,11 +13,33 @@ pub struct SeqSerializer<'a> {
     len_index: usize,
 }
 
+pub struct SerializerOptions {
+    pub use_serialized_len: bool, // Herodotus encodes the length of substructure as the length of serialized data
+}
+
+impl Default for SerializerOptions {
+    fn default() -> Self {
+        Self {
+            use_serialized_len: false,
+        }
+    }
+}
+
 pub fn to_felts<T>(value: &T) -> Result<Vec<FieldElement>>
 where
     T: Serialize,
 {
-    let mut serializer = Serializer { output: Vec::new() };
+    to_felts_with_options(value, Default::default())
+}
+
+pub fn to_felts_with_options<T>(value: &T, options: SerializerOptions) -> Result<Vec<FieldElement>>
+where
+    T: Serialize,
+{
+    let mut serializer = Serializer {
+        options,
+        output: Vec::new(),
+    };
     value.serialize(&mut serializer)?;
     Ok(serializer.output)
 }
@@ -215,8 +238,11 @@ impl<'a> ser::SerializeSeq for SeqSerializer<'a> {
     }
 
     fn end(self) -> Result<()> {
-        self.se.output[self.len_index] =
-            FieldElement::from(self.se.output.len() - self.len_index - 1);
+        if self.se.options.use_serialized_len {
+            self.se.output[self.len_index] =
+                FieldElement::from(self.se.output.len() - self.len_index - 1);
+        }
+
         Ok(())
     }
 }

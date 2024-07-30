@@ -12,7 +12,7 @@ mod stark_proof;
 mod utils;
 
 pub use crate::{json_parser::ProofJSON, stark_proof::StarkProof};
-pub use serde_felt::to_felts;
+pub use serde_felt::{from_felts, to_felts};
 
 impl Display for StarkProof {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -33,11 +33,5 @@ pub fn parse(input: &str) -> anyhow::Result<StarkProof> {
     let proof_json = serde_json::from_str::<ProofJSON>(input)?;
     let stark_proof = StarkProof::try_from(proof_json)?;
 
-    Ok(stark_proof)
-}
-
-pub fn parse_raw(input: &str) -> anyhow::Result<StarkProof> {
-    let proof_json = serde_json::from_str::<ProofJSON>(input)?;
-    let stark_proof = StarkProof::try_from(proof_json)?;
     Ok(stark_proof)
 }

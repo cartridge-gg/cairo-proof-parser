@@ -326,6 +326,14 @@ pub fn proof_from_annotations(value: ProofJSON) -> anyhow::Result<StarkProof> {
     })
 }
 
+impl TryFrom<&str> for StarkProof {
+    type Error = anyhow::Error;
+    fn try_from(input: &str) -> anyhow::Result<Self> {
+        let proof_json = serde_json::from_str::<ProofJSON>(input)?;
+        StarkProof::try_from(proof_json)
+    }
+}
+
 impl TryFrom<ProofJSON> for StarkProof {
     type Error = anyhow::Error;
     fn try_from(value: ProofJSON) -> anyhow::Result<Self> {
