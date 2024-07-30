@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use starknet_ff::FieldElement;
 
-use crate::{from_felts, from_felts_with_lengths, to_felts};
+use crate::{from_felts, from_felts_with_lengths, ser::SerializerOptions, to_felts_with_options};
 
 use super::error::Result;
 
@@ -30,6 +30,10 @@ struct WithArray {
     b: FieldElement,
 }
 
+const OPTIONS: SerializerOptions = SerializerOptions {
+    use_serialized_len: true,
+};
+
 #[test]
 fn test_deser_basic() -> Result<()> {
     let value = Basic {
@@ -38,7 +42,7 @@ fn test_deser_basic() -> Result<()> {
     };
     let expected = vec![1u64.into(), 2u64.into()];
 
-    assert_eq!(to_felts(&value).unwrap(), expected);
+    assert_eq!(to_felts_with_options(&value, OPTIONS).unwrap(), expected);
     assert_eq!(from_felts::<Basic>(&expected).unwrap(), value);
     Ok(())
 }
@@ -55,7 +59,7 @@ fn test_deser_nested() -> Result<()> {
     };
     let expected = vec![1u64.into(), 11u64.into(), 12u64.into(), 2u64.into()];
 
-    assert_eq!(to_felts(&value).unwrap(), expected);
+    assert_eq!(to_felts_with_options(&value, OPTIONS).unwrap(), expected);
     assert_eq!(from_felts::<Nested>(&expected).unwrap(), value);
     Ok(())
 }
@@ -68,7 +72,7 @@ fn test_deser_seq() -> Result<()> {
     };
     let expected = vec![2u64.into(), 11u64.into(), 12u64.into(), 2u64.into()];
 
-    assert_eq!(to_felts(&value).unwrap(), expected);
+    assert_eq!(to_felts_with_options(&value, OPTIONS).unwrap(), expected);
     assert_eq!(from_felts::<WithSequence>(&expected).unwrap(), value);
     Ok(())
 }
@@ -81,7 +85,7 @@ fn test_deser_arr() -> Result<()> {
     };
     let expected = vec![11u64.into(), 12u64.into(), 2u64.into()];
 
-    assert_eq!(to_felts(&value).unwrap(), expected);
+    assert_eq!(to_felts_with_options(&value, OPTIONS).unwrap(), expected);
     assert_eq!(from_felts::<WithArray>(&expected).unwrap(), value);
     Ok(())
 }
