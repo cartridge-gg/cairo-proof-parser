@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 use starknet_crypto::FieldElement;
 
-use serde_felt::deserialize_montgomery_vec;
+use serde_felt::{deserialize_montgomery_vec, to_felts_with_options, SerializerOptions};
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct StarkProof {
@@ -179,4 +179,16 @@ pub struct PublicMemoryCell<B> {
 pub struct SegmentInfo {
     pub begin_addr: u32,
     pub stop_ptr: u32,
+}
+
+impl StarkProof {
+    pub fn to_felts(&self) -> Vec<FieldElement> {
+        to_felts_with_options(
+            self,
+            SerializerOptions {
+                use_serialized_len: true,
+            },
+        )
+        .unwrap()
+    }
 }
