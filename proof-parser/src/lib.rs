@@ -12,7 +12,7 @@ mod stark_proof;
 mod utils;
 
 pub use crate::{json_parser::ProofJSON, stark_proof::StarkProof};
-pub use serde_felt::to_felts;
+pub use serde_felt::{from_felts, to_felts};
 
 impl Display for StarkProof {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
