@@ -1,14 +1,14 @@
 use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
-use starknet_crypto::FieldElement;
 
 use serde_felt::{deserialize_montgomery_vec, to_felts_with_options, SerializerOptions};
+use starknet_crypto::Felt;
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct StarkProof {
     pub config: StarkConfig,
-    pub public_input: CairoPublicInput<FieldElement>,
+    pub public_input: CairoPublicInput<Felt>,
     pub unsent_commitment: StarkUnsentCommitment,
     pub witness: StarkWitnessReordered,
 }
@@ -60,52 +60,52 @@ pub struct ProofOfWorkConfig {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct StarkUnsentCommitment {
     pub traces: TracesUnsentCommitment,
-    pub composition: FieldElement,
-    pub oods_values: Vec<FieldElement>,
+    pub composition: Felt,
+    pub oods_values: Vec<Felt>,
     pub fri: FriUnsentCommitment,
-    pub proof_of_work_nonce: FieldElement,
+    pub proof_of_work_nonce: Felt,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TracesUnsentCommitment {
-    pub original: FieldElement,
-    pub interaction: FieldElement,
+    pub original: Felt,
+    pub interaction: Felt,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FriUnsentCommitment {
-    pub inner_layers: Vec<FieldElement>,
-    pub last_layer_coefficients: Vec<FieldElement>,
+    pub inner_layers: Vec<Felt>,
+    pub last_layer_coefficients: Vec<Felt>,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct StarkWitness {
     #[serde(deserialize_with = "deserialize_montgomery_vec")]
-    pub original_leaves: Vec<FieldElement>,
-    pub original_authentications: Vec<FieldElement>,
+    pub original_leaves: Vec<Felt>,
+    pub original_authentications: Vec<Felt>,
     #[serde(deserialize_with = "deserialize_montgomery_vec")]
-    pub interaction_leaves: Vec<FieldElement>,
-    pub interaction_authentications: Vec<FieldElement>,
+    pub interaction_leaves: Vec<Felt>,
+    pub interaction_authentications: Vec<Felt>,
     #[serde(deserialize_with = "deserialize_montgomery_vec")]
-    pub composition_leaves: Vec<FieldElement>,
-    pub composition_authentications: Vec<FieldElement>,
+    pub composition_leaves: Vec<Felt>,
+    pub composition_authentications: Vec<Felt>,
     pub fri_witness: FriWitness,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct StarkWitnessReordered {
     #[serde(serialize_with = "double_len_serialize")]
-    pub original_leaves: Vec<FieldElement>,
+    pub original_leaves: Vec<Felt>,
     #[serde(serialize_with = "double_len_serialize")]
-    pub interaction_leaves: Vec<FieldElement>,
+    pub interaction_leaves: Vec<Felt>,
     #[serde(serialize_with = "double_len_serialize")]
-    pub original_authentications: Vec<FieldElement>,
+    pub original_authentications: Vec<Felt>,
     #[serde(serialize_with = "double_len_serialize")]
-    pub interaction_authentications: Vec<FieldElement>,
+    pub interaction_authentications: Vec<Felt>,
     #[serde(serialize_with = "double_len_serialize")]
-    pub composition_leaves: Vec<FieldElement>,
+    pub composition_leaves: Vec<Felt>,
     #[serde(serialize_with = "double_len_serialize")]
-    pub composition_authentications: Vec<FieldElement>,
+    pub composition_authentications: Vec<Felt>,
     pub fri_witness: FriWitness,
 }
 
@@ -123,7 +123,7 @@ impl From<StarkWitness> for StarkWitnessReordered {
     }
 }
 
-pub fn double_len_serialize<S>(value: &[FieldElement], serializer: S) -> Result<S::Ok, S::Error>
+pub fn double_len_serialize<S>(value: &[Felt], serializer: S) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
 {
@@ -148,8 +148,8 @@ pub struct FriWitness {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FriLayerWitness {
     #[serde(deserialize_with = "deserialize_montgomery_vec")]
-    pub leaves: Vec<FieldElement>,
-    pub table_witness: Vec<FieldElement>,
+    pub leaves: Vec<Felt>,
+    pub table_witness: Vec<Felt>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -182,7 +182,7 @@ pub struct SegmentInfo {
 }
 
 impl StarkProof {
-    pub fn to_felts(&self) -> Vec<FieldElement> {
+    pub fn to_felts(&self) -> Vec<Felt> {
         to_felts_with_options(
             self,
             SerializerOptions {

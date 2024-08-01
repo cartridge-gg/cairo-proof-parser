@@ -8,7 +8,7 @@ use anyhow::{anyhow, Context};
 use num_bigint::BigUint;
 use serde::Deserialize;
 use serde_felt::from_felts_with_lengths;
-use starknet_crypto::FieldElement;
+use starknet_crypto::Felt;
 
 use crate::{
     annotations::Annotations,
@@ -59,11 +59,11 @@ pub struct PublicInput {
     rc_max: u32,
 }
 
-pub fn bigint_to_fe(bigint: &BigUint) -> FieldElement {
-    FieldElement::from_hex_be(&bigint.to_str_radix(16)).unwrap()
+pub fn bigint_to_fe(bigint: &BigUint) -> Felt {
+    Felt::from_hex(&bigint.to_str_radix(16)).unwrap()
 }
 
-pub fn bigints_to_fe(bigint: &[BigUint]) -> Vec<FieldElement> {
+pub fn bigints_to_fe(bigint: &[BigUint]) -> Vec<Felt> {
     bigint.iter().map(bigint_to_fe).collect()
 }
 
@@ -176,7 +176,7 @@ impl ProofJSON {
         public_input: PublicInput,
         // z: BigUint,
         // alpha: BigUint,
-    ) -> anyhow::Result<CairoPublicInput<FieldElement>> {
+    ) -> anyhow::Result<CairoPublicInput<Felt>> {
         let continuous_page_headers = vec![];
         // Self::continuous_page_headers(&public_input.public_memory, z, alpha)?; this line does for now anyway
         let main_page = Self::main_page(&public_input.public_memory)?;
@@ -187,8 +187,7 @@ impl ProofJSON {
             .map(|e| {
                 Ok((
                     e.0,
-                    FieldElement::from_hex_be(&e.1.to_str_radix(16))
-                        .context("Invalid dynamic param")?,
+                    Felt::from_hex(&e.1.to_str_radix(16)).context("Invalid dynamic param")?,
                 ))
             })
             .collect::<anyhow::Result<_>>()?;
@@ -199,10 +198,9 @@ impl ProofJSON {
                 stop_ptr: s.stop_ptr,
             })
             .collect::<Vec<_>>();
-        let layout =
-            FieldElement::from_hex_be(&prefix_hex::encode(public_input.layout.bytes_encode()))?;
+        let layout = Felt::from_hex(&prefix_hex::encode(public_input.layout.bytes_encode()))?;
         let (padding_addr, padding_value) = match public_input.public_memory.first() {
-            Some(m) => (m.address, FieldElement::from_hex_be(&m.value)?),
+            Some(m) => (m.address, Felt::from_hex(&m.value)?),
             None => anyhow::bail!("Invalid public memory"),
         };
         Ok(CairoPublicInput {
@@ -225,14 +223,14 @@ impl ProofJSON {
 
     fn main_page(
         public_memory: &[PublicMemoryElement],
-    ) -> anyhow::Result<Vec<PublicMemoryCell<FieldElement>>> {
+    ) -> anyhow::Result<Vec<PublicMemoryCell<Felt>>> {
         public_memory
             .iter()
             .filter(|m| m.page == 0)
             .map(|m| {
                 Ok(PublicMemoryCell {
                     address: m.address,
-                    value: FieldElement::from_hex_be(&m.value).context("Invalid memory value")?,
+                    value: Felt::from_hex(&m.value).context("Invalid memory value")?,
                 })
             })
             .collect::<anyhow::Result<Vec<_>>>()
@@ -286,7 +284,7 @@ impl ProofJSON {
 }
 
 #[derive(Debug)]
-struct HexProof(Vec<FieldElement>);
+struct HexProof(Vec<Felt>);
 
 impl TryFrom<&str> for HexProof {
     type Error = anyhow::Error;
@@ -294,7 +292,7 @@ impl TryFrom<&str> for HexProof {
         let hex: Vec<u8> = prefix_hex::decode(value).map_err(|_| anyhow!("Invalid hex"))?;
         let mut result = vec![];
         for chunk in hex.chunks(32) {
-            result.push(FieldElement::from_byte_slice_be(chunk)?);
+            result.push(Felt::from_bytes_be_slice(chunk));
         }
 
         Ok(HexProof(result))

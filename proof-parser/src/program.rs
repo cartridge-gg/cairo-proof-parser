@@ -1,5 +1,4 @@
-use starknet_crypto::poseidon_hash_many;
-use starknet_types_core::felt::Felt;
+use starknet_crypto::{poseidon_hash_many, Felt};
 use std::collections::HashMap;
 
 use crate::StarkProof;
@@ -43,8 +42,8 @@ impl StarkProof {
             .map(|el| (el.address, el.value))
             .collect::<HashMap<_, _>>();
 
-        let program: Vec<FieldElement> = (start..end)
-            .map(|addr| *main_page_map.get(&addr).unwrap_or(&FieldElement::ZERO))
+        let program: Vec<Felt> = (start..end)
+            .map(|addr| *main_page_map.get(&addr).unwrap_or(&Felt::ZERO))
             .collect();
 
         // Calculate the Poseidon hash of the program output

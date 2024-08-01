@@ -71,7 +71,7 @@ async fn main() -> anyhow::Result<()> {
     let mut hashes = vec![];
 
     for fragment in serialized_proof.into_iter().chunks(2000).into_iter() {
-        let mut fragment: Vec<FieldElement> = fragment.collect();
+        let mut fragment: Vec<Felt> = fragment.collect();
         let hash = poseidon_hash_many(&fragment);
         hashes.push(hash);
 
@@ -92,14 +92,14 @@ async fn main() -> anyhow::Result<()> {
         let tx = publish_fragment(&account, nonce, fragment).await?;
         println!("Publish transaction: {tx:#x} .");
 
-        nonce += 1u64.into();
+        nonce += &1u64.into();
     }
 
     let calldata = vec![hashes.len().into()]
         .into_iter()
         .chain(hashes.into_iter())
         .chain(vec![1u64.into()].into_iter())
-        .collect::<Vec<FieldElement>>();
+        .collect::<Vec<Felt>>();
 
     let tx = verify_and_register_fact(account, calldata, nonce).await?;
     println!("Verify transaction: {:#x} .", tx);
@@ -112,12 +112,12 @@ async fn main() -> anyhow::Result<()> {
 
 async fn publish_fragment(
     account: &SingleOwnerAccount<JsonRpcClient<HttpTransport>, LocalWallet>,
-    nonce: FieldElement,
-    serialized_proof: Vec<FieldElement>,
-) -> anyhow::Result<FieldElement> {
+    nonce: Felt,
+    serialized_proof: Vec<Felt>,
+) -> anyhow::Result<Felt> {
     let tx = account
-        .execute(vec![Call {
-            to: FieldElement::from_hex_be(FACT_REGISTRY).expect("invalid world address"),
+        .execute_v1(vec![Call {
+            to: Felt::from_hex(FACT_REGISTRY).expect("invalid world address"),
             selector: get_selector_from_name("publish_fragment").expect("invalid selector"),
             calldata: serialized_proof,
         }])
@@ -135,11 +135,11 @@ async fn verify_and_register_fact(
     account: SingleOwnerAccount<JsonRpcClient<HttpTransport>, LocalWallet>,
     serialized_proof: Vec<Felt>,
     nonce: Felt,
-) -> anyhow::Result<FieldElement> {
+) -> anyhow::Result<Felt> {
     println!("Sending transaction...");
     let tx = account
-        .execute(vec![Call {
-            to: Felt::from_hex_be(FACT_REGISTRY).expect("invalid world address"),
+        .execute_v1(vec![Call {
+            to: Felt::from_hex(FACT_REGISTRY).expect("invalid world address"),
             selector: get_selector_from_name("verify_and_register_fact_from_fragments")
                 .expect("invalid selector"),
             calldata: serialized_proof,
@@ -155,7 +155,7 @@ async fn verify_and_register_fact(
 async fn wait_for(
     account: &SingleOwnerAccount<JsonRpcClient<HttpTransport>, LocalWallet>,
     tx: InvokeTransactionResult,
-) -> anyhow::Result<FieldElement> {
+) -> anyhow::Result<Felt> {
     let start_fetching = std::time::Instant::now();
     let wait_for = Duration::from_secs(360);
     let execution_status = loop {

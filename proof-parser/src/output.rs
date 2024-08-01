@@ -1,7 +1,4 @@
-use starknet_crypto::poseidon_hash_many;
-use starknet_types_core::felt::Felt;
-use std::collections::HashMap;
-use std::convert::TryInto;
+use starknet_crypto::{poseidon_hash_many, Felt};
 
 use crate::StarkProof;
 
@@ -30,7 +27,7 @@ impl StarkProof {
         let program_output = self.public_input.main_page[start..end]
             .iter()
             .map(|cell| cell.value)
-            .collect_vec();
+            .collect();
 
         // Calculate the Poseidon hash of the program output
         let program_output_hash = poseidon_hash_many(&program_output);

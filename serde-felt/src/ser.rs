@@ -1,11 +1,11 @@
 use serde::{ser, Serialize};
-use starknet_crypto::FieldElement;
+use starknet_crypto::Felt;
 
 use super::error::{Error, Result};
 
 pub struct Serializer {
     options: SerializerOptions,
-    output: Vec<FieldElement>,
+    output: Vec<Felt>,
 }
 
 pub struct SeqSerializer<'a> {
@@ -13,26 +13,20 @@ pub struct SeqSerializer<'a> {
     len_index: usize,
 }
 
+#[derive(Default)]
 pub struct SerializerOptions {
     pub use_serialized_len: bool, // Herodotus encodes the length of substructure as the length of serialized data
 }
 
-impl Default for SerializerOptions {
-    fn default() -> Self {
-        Self {
-            use_serialized_len: false,
-        }
-    }
-}
 
-pub fn to_felts<T>(value: &T) -> Result<Vec<FieldElement>>
+pub fn to_felts<T>(value: &T) -> Result<Vec<Felt>>
 where
     T: Serialize,
 {
     to_felts_with_options(value, Default::default())
 }
 
-pub fn to_felts_with_options<T>(value: &T, options: SerializerOptions) -> Result<Vec<FieldElement>>
+pub fn to_felts_with_options<T>(value: &T, options: SerializerOptions) -> Result<Vec<Felt>>
 where
     T: Serialize,
 {
@@ -91,7 +85,7 @@ impl<'a> ser::Serializer for &'a mut Serializer {
     }
 
     fn serialize_u64(self, v: u64) -> Result<()> {
-        self.output.push(FieldElement::from(v));
+        self.output.push(Felt::from(v));
         Ok(())
     }
 
@@ -108,7 +102,7 @@ impl<'a> ser::Serializer for &'a mut Serializer {
     }
 
     fn serialize_str(self, v: &str) -> Result<()> {
-        let felt = FieldElement::from_dec_str(v).map_err(|_| Error::UnparsableString)?;
+        let felt = Felt::from_hex(v).map_err(|_| Error::UnparsableString)?;
         self.output.push(felt);
         Ok(())
     }
@@ -175,7 +169,7 @@ impl<'a> ser::Serializer for &'a mut Serializer {
     fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq> {
         let len = len.ok_or(Error::LengthNotKnownAtSerialization)?;
         let len_index = self.output.len();
-        self.output.push(FieldElement::from(len)); // This is later overwritten with the actual length
+        self.output.push(Felt::from(len)); // This is later overwritten with the actual length
 
         Ok(SeqSerializer {
             se: self,
@@ -239,8 +233,7 @@ impl<'a> ser::SerializeSeq for SeqSerializer<'a> {
 
     fn end(self) -> Result<()> {
         if self.se.options.use_serialized_len {
-            self.se.output[self.len_index] =
-                FieldElement::from(self.se.output.len() - self.len_index - 1);
+            self.se.output[self.len_index] = Felt::from(self.se.output.len() - self.len_index - 1);
         }
 
         Ok(())
