@@ -4,7 +4,7 @@ use std::convert::TryInto;
 
 use crate::parse_raw;
 
-const OUTPUT_SEGMENT_OFFSET: usize = 2;
+pub const OUTPUT_SEGMENT_OFFSET: usize = 2;
 
 pub struct ExtractOutputResult {
     pub program_output: Vec<FieldElement>,
