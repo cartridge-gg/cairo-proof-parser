@@ -31,6 +31,18 @@ struct Cli {
     /// The private key of the signer in hexadecimal.
     #[clap(short, long, value_parser)]
     key: String,
+
+    /// The StarkNet address of the contract.
+    #[clap(short, long, value_parser)]
+    to: String,
+
+    /// The selector name for the contract function.
+    #[clap(short, long, value_parser)]
+    selector: String,
+
+    /// The URL of the StarkNet JSON-RPC endpoint.
+    #[clap(short, long, value_parser)]
+    url: String,
 }
 
 #[tokio::main]
@@ -43,12 +55,13 @@ async fn main() -> anyhow::Result<()> {
 
     // Setup StarkNet provider and wallet
     let provider = JsonRpcClient::new(HttpTransport::new(
-        Url::parse("https://free-rpc.nethermind.io/sepolia-juno/v0_7").unwrap(),
+        Url::parse(&args.url).expect("Invalid URL"),
     ));
     let signer = LocalWallet::from(key);
-    let chain_id =
-        Felt::from_hex("0x00000000000000000000000000000000000000000000534e5f5345504f4c4941")
-            .unwrap();
+
+    // Fetch chain ID from the provider
+    let chain_id = provider.chain_id().await?;
+
     let mut account =
         SingleOwnerAccount::new(provider, signer, address, chain_id, ExecutionEncoding::New);
     account.set_block_id(BlockId::Tag(BlockTag::Pending));
@@ -70,7 +83,7 @@ async fn main() -> anyhow::Result<()> {
     let expected_fact = poseidon_hash_many(&[program_hash, program_output_hash]);
 
     let serialized_proof = to_felts(&parse(&input)?)?;
-    let tx = verify_and_register_fact(account, serialized_proof).await?;
+    let tx = verify_and_register_fact(account, serialized_proof, &args.to, &args.selector).await?;
     println!("tx: {tx}");
     println!("expected_fact: {}", expected_fact);
 
@@ -80,12 +93,13 @@ async fn main() -> anyhow::Result<()> {
 async fn verify_and_register_fact(
     account: SingleOwnerAccount<JsonRpcClient<HttpTransport>, LocalWallet>,
     serialized_proof: Vec<Felt>,
+    to: &str,
+    selector: &str,
 ) -> anyhow::Result<String> {
     let tx = account
         .execute_v1(vec![Call {
-            to: Felt::from_hex("0x282969f3212819740d03929f52c709bc62f4c2ce8c17b5f24bd835a03cca22")
-                .expect("invalid world address"),
-            selector: get_selector_from_name("verify_and_register_fact").expect("invalid selector"),
+            to: Felt::from_hex(to).expect("invalid address"),
+            selector: get_selector_from_name(selector).expect("invalid selector"),
             calldata: serialized_proof,
         }])
         .max_fee(starknet::macros::felt!("1000000000000000")) // sometimes failing without this line

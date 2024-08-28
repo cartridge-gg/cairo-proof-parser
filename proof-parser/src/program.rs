@@ -3,10 +3,10 @@ use starknet_types_core::felt::Felt;
 use std::collections::HashMap;
 use std::convert::TryInto;
 
+use crate::output::OUTPUT_SEGMENT_OFFSET;
 use crate::parse_raw;
 
 const PROGRAM_SEGMENT_OFFSET: usize = 0;
-const EXECUTION_SEGMENT_OFFSET: usize = 1;
 
 pub struct ExtractProgramResult {
     pub program: Vec<Felt>,
@@ -25,11 +25,11 @@ pub fn extract_program(input: &str) -> anyhow::Result<ExtractProgramResult> {
         .ok_or_else(|| anyhow::Error::msg("Program segment not found"))?;
 
     // Retrieve the execution segment from the proof
-    let execution_segment = proof
+    let output_segment = proof
         .public_input
         .segments
-        .get(EXECUTION_SEGMENT_OFFSET)
-        .ok_or_else(|| anyhow::Error::msg("Execution segment not found"))?;
+        .get(OUTPUT_SEGMENT_OFFSET)
+        .ok_or_else(|| anyhow::Error::msg("Output segment not found"))?;
 
     // Construct a map for the main page elements
     let mut main_page_map = HashMap::new();
@@ -47,10 +47,11 @@ pub fn extract_program(input: &str) -> anyhow::Result<ExtractProgramResult> {
     }
 
     let initial_pc = program_segment.begin_addr;
-    let initial_fp = execution_segment.begin_addr;
 
     // Extract program bytecode using the address range in the segments
-    let program: Vec<Felt> = (initial_pc..(initial_fp - initial_pc - 1))
+    let program: Vec<Felt> = (initial_pc
+        ..(proof.public_input.main_page.len() as u32 - output_segment.stop_ptr
+            + output_segment.begin_addr))
         .map(|addr| {
             *main_page_map
                 .get(&addr)
