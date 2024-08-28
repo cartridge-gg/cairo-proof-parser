@@ -1,4 +1,5 @@
-use starknet_crypto::{poseidon_hash_many, FieldElement};
+use starknet_crypto::poseidon_hash_many;
+use starknet_types_core::felt::Felt;
 use std::collections::HashMap;
 use std::convert::TryInto;
 
@@ -6,11 +7,10 @@ use crate::output::OUTPUT_SEGMENT_OFFSET;
 use crate::parse_raw;
 
 const PROGRAM_SEGMENT_OFFSET: usize = 0;
-const EXECUTION_SEGMENT_OFFSET: usize = 1;
 
 pub struct ExtractProgramResult {
-    pub program: Vec<FieldElement>,
-    pub program_hash: FieldElement,
+    pub program: Vec<Felt>,
+    pub program_hash: Felt,
 }
 
 pub fn extract_program(input: &str) -> anyhow::Result<ExtractProgramResult> {
@@ -40,10 +40,8 @@ pub fn extract_program(input: &str) -> anyhow::Result<ExtractProgramResult> {
             .chain(value_bytes.iter())
             .copied()
             .collect::<Vec<u8>>();
-        let field_element = FieldElement::from_bytes_be(
-            &padded_value.try_into().expect("Failed to convert to array"),
-        )
-        .expect("Failed to convert to FieldElement");
+        let field_element =
+            Felt::from_bytes_be(&padded_value.try_into().expect("Failed to convert to array"));
 
         main_page_map.insert(element.address, field_element);
     }
@@ -51,7 +49,7 @@ pub fn extract_program(input: &str) -> anyhow::Result<ExtractProgramResult> {
     let initial_pc = program_segment.begin_addr;
 
     // Extract program bytecode using the address range in the segments
-    let program: Vec<FieldElement> = (initial_pc
+    let program: Vec<Felt> = (initial_pc
         ..(proof.public_input.main_page.len() as u32 - output_segment.stop_ptr
             + output_segment.begin_addr))
         .map(|addr| {

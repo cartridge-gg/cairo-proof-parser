@@ -8,7 +8,7 @@ use serde_felt::to_felts;
 use starknet::accounts::ConnectedAccount;
 use starknet::accounts::{Account, Call, ExecutionEncoding, SingleOwnerAccount};
 use starknet::core::types::{
-    BlockId, BlockTag, FieldElement, TransactionExecutionStatus, TransactionStatus,
+    BlockId, BlockTag, Felt, TransactionExecutionStatus, TransactionStatus,
 };
 use starknet::core::utils::get_selector_from_name;
 use starknet::providers::jsonrpc::HttpTransport;
@@ -49,10 +49,9 @@ struct Cli {
 async fn main() -> anyhow::Result<()> {
     let args = Cli::parse(); // Automatically parse command line arguments
 
-    let address = FieldElement::from_hex_be(&args.address).expect("Invalid signer address hex");
-    let key = SigningKey::from_secret_scalar(
-        FieldElement::from_hex_be(&args.key).expect("Invalid signer key hex"),
-    );
+    let address = Felt::from_hex(&args.address).expect("Invalid signer address hex");
+    let key =
+        SigningKey::from_secret_scalar(Felt::from_hex(&args.key).expect("Invalid signer key hex"));
 
     // Setup StarkNet provider and wallet
     let provider = JsonRpcClient::new(HttpTransport::new(
@@ -93,13 +92,13 @@ async fn main() -> anyhow::Result<()> {
 
 async fn verify_and_register_fact(
     account: SingleOwnerAccount<JsonRpcClient<HttpTransport>, LocalWallet>,
-    serialized_proof: Vec<FieldElement>,
+    serialized_proof: Vec<Felt>,
     to: &str,
     selector: &str,
 ) -> anyhow::Result<String> {
     let tx = account
-        .execute(vec![Call {
-            to: FieldElement::from_hex_be(to).expect("invalid address"),
+        .execute_v1(vec![Call {
+            to: Felt::from_hex(to).expect("invalid address"),
             selector: get_selector_from_name(selector).expect("invalid selector"),
             calldata: serialized_proof,
         }])
