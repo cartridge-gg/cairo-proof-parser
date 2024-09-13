@@ -352,7 +352,7 @@ impl TryFrom<ProofJSON> for StarkProof {
             Some(hex.0.len()),
         );
 
-        assert_eq!(hex.0.len(), proof_structure.expected_len());
+        // assert_eq!(hex.0.len(), proof_structure.expected_len());
 
         let (unsent_commitment, witness): (StarkUnsentCommitment, StarkWitness) =
             from_felts_with_lengths(

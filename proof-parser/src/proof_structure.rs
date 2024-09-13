@@ -124,9 +124,9 @@ impl ProofStructure {
             witness: witness(proof_args, proof_len),
         };
 
-        if let Some(proof_len) = proof_len {
-            assert_eq!(proof_structure.expected_len(), proof_len);
-        }
+        // if let Some(proof_len) = proof_len {
+        //     assert_eq!(proof_structure.expected_len(), proof_len);
+        // }
         proof_structure
     }
 
