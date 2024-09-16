@@ -30,7 +30,7 @@ impl StarkProof {
         // Extract program bytecode using the address range in the segments
         // Based on https://github.com/HerodotusDev/integrity/blob/bca869260c0c5d26bb18391356b095feb548aae5/src/air/public_input.cairo#L178-L179.
         let initial_pc = program_segment.begin_addr;
-        let start = initial_pc + 1;
+        let start = initial_pc;
         let end = start + self.public_input.main_page.len() as u32 - output_len;
 
         // Construct a map for the main page elements
