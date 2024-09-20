@@ -1,5 +1,6 @@
 use anyhow::Context;
 
+use cairo_proof_parser::program::CairoVersion;
 use cairo_proof_parser::StarkProof;
 use clap::Parser;
 use itertools::Itertools;
@@ -24,19 +25,22 @@ const FACT_REGISTRY: &str = "0x18c9ffecaf64edf3f10ee150272c870251436d1a9c0e2c8b1
 const RPC_URL: &str = "https://starknet-sepolia.g.alchemy.com/starknet/version/rpc/v0_7/PovJ0plog8O9RxyaPMYAZiKHqZ5LLII_";
 const FEE_MULTIPLIER: f64 = 2.0;
 
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, Clone)]
 #[clap(author, version, about, long_about = None)]
 struct Cli {
     /// The StarkNet address of the signer.
-    #[clap(short, long, value_parser)]
+    #[arg(short, long)]
     address: String,
 
     /// The private key of the signer in hexadecimal.
-    #[clap(short, long, value_parser)]
+    #[arg(short, long)]
     key: String,
 
-    #[clap(short, long, value_parser)]
+    #[arg(short, long)]
     store_proof: bool,
+
+    #[arg(short, long,default_value = "cairo")]
+    cairo_version: CairoVersion,
 }
 
 #[tokio::main]
@@ -62,7 +66,7 @@ async fn main() -> anyhow::Result<()> {
     io::stdin().read_to_string(&mut input)?;
 
     let proof = StarkProof::try_from(&input[..]).context("Failed to parse proof")?;
-    let program_hash = proof.extract_program().unwrap().program_hash;
+    let program_hash = proof.extract_program(args.cairo_version).unwrap().program_hash;
     let output_hash = proof.extract_output().unwrap().program_output_hash;
 
     let serialized_proof = to_felts(&proof)?;
