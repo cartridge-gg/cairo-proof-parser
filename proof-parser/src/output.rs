@@ -20,7 +20,7 @@ impl StarkProof {
 
         // Extract program output using the address range in the output segment
         let output_len = output_segment.stop_ptr - output_segment.begin_addr;
-        // Based on: https://github.com/HerodotusDev/integrity/blob/bca869260c0c5d26bb18391356b095feb548aae5/src/air/public_input.cairo#L182-L183.
+        // Based on: https://github.com/HerodotusDev/integrity/blob/main/src/air/public_input.cairo#L184-L187
         let start = self.public_input.main_page.len() - output_len as usize;
         let end = self.public_input.main_page.len();
 
